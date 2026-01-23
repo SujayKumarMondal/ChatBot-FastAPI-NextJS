@@ -55,79 +55,74 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8 p-8">
+    <div className="space-y-8 p-6 md:p-8 bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Welcome back, {user?.username}!</h1>
-        <p className="text-muted-foreground mt-2">Here's your activity overview</p>
+      <div className="animate-slideIn">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+          Welcome back, {user?.username}! 👋
+        </h1>
+        <p className="text-muted-foreground mt-2 text-lg">Here's your activity overview for today</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
-          icon={<MessageSquare className="h-6 w-6 text-primary" />}
+          icon={<MessageSquare className="h-6 w-6" />}
           label="Total Chats"
           value={stats.totalChats}
           subtext="All conversations"
+          color="from-primary to-primary/60"
         />
         <StatsCard
-          icon={<Zap className="h-6 w-6 text-accent" />}
+          icon={<Zap className="h-6 w-6" />}
           label="Total Messages"
           value={stats.totalMessages}
           subtext="In all chats"
+          color="from-accent to-accent/60"
         />
         <StatsCard
-          icon={<Clock className="h-6 w-6 text-blue-500" />}
+          icon={<Clock className="h-6 w-6" />}
           label="Avg Response"
           value={`${stats.avgResponseTime}s`}
           subtext="Response time"
+          color="from-blue-500 to-blue-400"
         />
         <StatsCard
-          icon={<TrendingUp className="h-6 w-6 text-green-500" />}
+          icon={<TrendingUp className="h-6 w-6" />}
           label="Current Streak"
           value={`${stats.streakDays} days`}
           subtext="Keep it going!"
+          color="from-green-500 to-green-400"
         />
       </div>
 
-      {/* Charts Section - Requires recharts 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card rounded-lg border border-border p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-foreground">Weekly Activity</h3>
-          <p className="text-muted-foreground">Charts require additional setup</p>
-        </div>
-        <div className="bg-card rounded-lg border border-border p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-foreground">Topic Breakdown</h3>
-          <p className="text-muted-foreground">Charts require additional setup</p>
-        </div>
-      </div>
-      */}
-
       {/* Quick Actions */}
-      <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border border-primary/20 p-6">
-        <h3 className="text-lg font-semibold mb-4 text-foreground">Quick Actions</h3>
+      <div className="bg-gradient-to-br from-secondary/20 to-accent/20 border border-secondary/30 rounded-2xl p-6 shadow-lg shadow-secondary/10 animate-slideIn">
+        <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
+          ✨ Quick Actions
+        </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <QuickAction label="New Chat" icon="+" color="bg-primary/20" />
-          <QuickAction label="View History" icon="📜" color="bg-blue-500/20" />
-          <QuickAction label="Export Chats" icon="📥" color="bg-green-500/20" />
-          <QuickAction label="Settings" icon="⚙️" color="bg-purple-500/20" />
+          <QuickAction label="New Chat" icon="➕" color="bg-gradient-to-br from-primary/40 to-primary/20" />
+          <QuickAction label="View History" icon="📜" color="bg-gradient-to-br from-blue-500/40 to-blue-400/20" />
+          <QuickAction label="Export Chats" icon="📥" color="bg-gradient-to-br from-green-500/40 to-green-400/20" />
+          <QuickAction label="Settings" icon="⚙️" color="bg-gradient-to-br from-purple-500/40 to-purple-400/20" />
         </div>
       </div>
     </div>
   );
 }
 
-function StatsCard({ icon, label, value, subtext }: any) {
+function StatsCard({ icon, label, value, subtext, color }: any) {
   return (
-    <div className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-shadow animate-slideIn">
+    <div className={`bg-gradient-to-br ${color} border border-white/20 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all transform hover:scale-105 hover:-translate-y-1 animate-slideIn backdrop-blur-sm`}>
       <div className="flex items-start justify-between mb-4">
-        <div>{icon}</div>
-        <TrendingUp className="h-4 w-4 text-green-500" />
+        <div className="text-white/80">{icon}</div>
+        <TrendingUp className="h-4 w-4 text-green-300" />
       </div>
       <div>
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="text-2xl font-bold text-foreground mt-1">{value}</p>
-        <p className="text-xs text-muted-foreground mt-1">{subtext}</p>
+        <p className="text-sm text-white/70 font-medium">{label}</p>
+        <p className="text-3xl font-bold text-white mt-2">{value}</p>
+        <p className="text-xs text-white/60 mt-1">{subtext}</p>
       </div>
     </div>
   );
@@ -136,28 +131,24 @@ function StatsCard({ icon, label, value, subtext }: any) {
 function QuickAction({ label, icon, color }: any) {
   return (
     <button
-      className={`${color} rounded-lg p-4 text-center hover:shadow-md transition-all transform hover:scale-105`}
+      className={`${color} border border-white/20 rounded-xl p-4 text-center hover:shadow-lg hover:border-white/40 transition-all transform hover:scale-105 backdrop-blur-sm group`}
     >
-      <div className="text-2xl mb-2">{icon}</div>
-      <p className="text-xs font-medium text-foreground">{label}</p>
+      <div className="text-3xl mb-2 group-hover:scale-125 transition-transform">{icon}</div>
+      <p className="text-sm font-semibold text-foreground">{label}</p>
     </button>
   );
 }
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-8 p-8">
-      <div className="h-10 bg-muted rounded-lg w-48 animate-shimmer" />
+    <div className="space-y-8 p-6 md:p-8">
+      <div className="h-12 bg-gradient-to-r from-primary/30 to-accent/30 rounded-xl w-48 animate-shimmer" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-card rounded-lg p-6 h-32 animate-shimmer" />
+          <div key={i} className="bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl p-6 h-32 animate-shimmer border border-white/10" />
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {[...Array(2)].map((_, i) => (
-          <div key={i} className="bg-card rounded-lg p-6 h-64 animate-shimmer" />
-        ))}
-      </div>
+      <div className="bg-gradient-to-br from-secondary/20 to-accent/20 rounded-2xl p-6 h-40 animate-shimmer border border-white/10" />
     </div>
   );
 }

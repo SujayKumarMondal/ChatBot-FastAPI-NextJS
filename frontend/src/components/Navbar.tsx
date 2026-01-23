@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Settings, Bell, Zap } from "lucide-react";
+import { Sun, Moon, Settings, Bell } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "./ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
@@ -22,39 +22,46 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-gradient-to-r from-background via-background to-primary/5 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-lg">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-gradient-to-r from-background via-background to-primary/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 shadow-lg shadow-primary/10">
       <div className="flex items-center justify-between px-4 py-3 md:px-6">
         {/* Left: Sidebar + Brand */}
         <div className="flex items-center gap-4">
           <SidebarTrigger />
-          <div className="hidden sm:flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Zap className="h-5 w-5 text-primary animate-pulse" />
-              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                ChatPaat
-              </span>
+          <div className="hidden sm:flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <img 
+                src="/brand_logo.png" 
+                alt="ChatPaat Logo" 
+                className="h-10 w-10 hover:scale-110 transition-transform" 
+              />
+              <div className="flex flex-col">
+                <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                  ChatPaat
+                </span>
+                <span className="text-[10px] font-medium text-accent/70">AI Companion</span>
+              </div>
             </div>
           </div>
-          <span className="text-xs md:text-sm font-medium text-muted-foreground hidden md:block">
+          <span className="text-xs md:text-sm font-medium text-muted-foreground hidden md:block border-l border-border/40 pl-4">
             Your AI Assistant. It can make mistakes, check wisely before you act.
           </span>
         </div>
 
         {/* Right: Controls */}
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-3">
           {/* Notification Bell */}
           {user && (
             <div className="relative">
               <Button
                 variant="ghost"
                 size="icon"
-                className="hover:bg-muted transition-colors relative"
+                className="hover:bg-primary/10 hover:text-primary transition-all relative rounded-full"
                 title="Notifications"
                 aria-label="View notifications"
               >
                 <Bell className="h-5 w-5" />
                 {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-white text-xs flex items-center justify-center animate-pulse">
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-destructive to-accent text-white text-xs flex items-center justify-center animate-pulse font-semibold">
                     {unreadNotifications}
                   </span>
                 )}
@@ -67,12 +74,12 @@ export default function Navbar() {
             variant="ghost"
             size="icon"
             onClick={toggleDarkMode}
-            className="hover:bg-muted transition-colors"
+            className="hover:bg-primary/10 hover:text-primary transition-all rounded-full"
             title="Toggle theme"
             aria-label="Toggle dark/light mode"
           >
             {isDark ? (
-              <Sun className="h-5 w-5 transition-transform" />
+              <Sun className="h-5 w-5 transition-transform rotate-0 hover:rotate-90" />
             ) : (
               <Moon className="h-5 w-5 transition-transform" />
             )}
@@ -84,7 +91,7 @@ export default function Navbar() {
               variant="ghost"
               size="icon"
               onClick={() => navigate("/settings")}
-              className="hover:bg-muted transition-colors"
+              className="hover:bg-primary/10 hover:text-primary transition-all rounded-full"
               title="Settings"
               aria-label="Open settings"
             >
@@ -98,42 +105,42 @@ export default function Navbar() {
               <Button
                 variant="outline"
                 size="sm"
-                className="hover:shadow-sm transition-shadow"
+                className="hover:border-primary hover:text-primary transition-all rounded-full border-border/40"
                 onClick={() => navigate("/signin")}
               >
                 Sign In
               </Button>
               <Button
                 size="sm"
-                className="hover:shadow-sm transition-shadow"
+                className="bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/50 transition-all rounded-full text-white font-semibold"
                 onClick={() => navigate("/register")}
               >
                 Register
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
-              <span className="hidden sm:block text-sm font-medium truncate max-w-[100px]">
+            <div className="flex items-center gap-3 ml-2 pl-3 border-l border-border/40">
+              <span className="hidden sm:block text-sm font-semibold text-foreground/80 truncate max-w-[100px]">
                 {user.first_name ? user.first_name.split(' ')[0] : user.username}
               </span>
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="hover:bg-destructive/20 transition-colors text-xs border-2 border-white hover:border-white"
+                  className="hover:bg-destructive/20 hover:text-destructive transition-all text-xs rounded-full"
                   onClick={() => setShowSignOutDialog(true)}
                 >
                   Sign Out
                 </Button>
                 <Avatar 
-                  className="h-8 w-8 ring-2 ring-primary/30 hover:ring-primary/60 transition-all cursor-pointer"
+                  className="h-8 w-8 ring-2 ring-primary/50 hover:ring-primary/100 hover:ring-offset-2 transition-all cursor-pointer"
                   onClick={() => navigate("/profile")}
                   role="button"
                   tabIndex={0}
                   aria-label="Open profile"
                 >
                   <AvatarImage src={user.image} alt={user.username} />
-                  <AvatarFallback className="bg-primary/20 font-semibold">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
                     {user.first_name ? user.first_name[0]?.toUpperCase() : user.username[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

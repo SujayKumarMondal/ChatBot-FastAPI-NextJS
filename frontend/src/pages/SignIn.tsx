@@ -27,14 +27,27 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary/10">
       <form
         onSubmit={handleSubmit}
-        className="bg-background p-6 rounded-lg shadow-lg w-full max-w-md space-y-4"
+        className="bg-gradient-to-br from-card to-card/80 border border-primary/20 p-8 rounded-2xl shadow-xl shadow-primary/20 w-full max-w-md space-y-6"
       >
-        <h2 className="text-2xl font-bold text-center">Sign In</h2>
+        {/* Logo Header */}
+        <div className="flex flex-col items-center gap-3 mb-6">
+          <img 
+            src="/brand_logo.png" 
+            alt="ChatPaat Logo" 
+            className="h-16 w-16 hover:scale-110 transition-transform" 
+          />
+          <div className="text-center">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">ChatPaat</h1>
+            <p className="text-sm text-muted-foreground mt-1">Your AI conversational partner</p>
+          </div>
+        </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        <h2 className="text-2xl font-bold text-center text-foreground">Sign In</h2>
+
+        {error && <p className="text-destructive text-sm bg-destructive/10 p-3 rounded-lg">{error}</p>}
 
         <Input
           name="email"

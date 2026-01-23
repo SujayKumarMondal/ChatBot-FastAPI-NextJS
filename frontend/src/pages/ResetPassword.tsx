@@ -41,11 +41,20 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30">
-      <form onSubmit={handleSubmit} className="bg-background p-6 rounded-lg shadow-lg w-full max-w-md space-y-4">
-        <h2 className="text-2xl font-bold text-center">Reset Password</h2>
-        {message && <p className="text-green-600">{message}</p>}
-        {error && <p className="text-red-600">{error}</p>}
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary/10">
+      <form onSubmit={handleSubmit} className="bg-gradient-to-br from-card to-card/80 border border-primary/20 p-8 rounded-2xl shadow-xl shadow-primary/20 w-full max-w-md space-y-6">
+        {/* Logo Header */}
+        <div className="flex flex-col items-center gap-3 mb-6">
+          <img 
+            src="/brand_logo.png" 
+            alt="ChatPaat Logo" 
+            className="h-14 w-14 hover:scale-110 transition-transform" 
+          />
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">ChatPaat</h1>
+        </div>
+        <h2 className="text-2xl font-bold text-center text-foreground">Reset Password</h2>
+        {message && <p className="text-green-600 bg-green-500/10 p-3 rounded-lg">{message}</p>}
+        {error && <p className="text-destructive bg-destructive/10 p-3 rounded-lg">{error}</p>}
         <Input
           name="password"
           type="password"
