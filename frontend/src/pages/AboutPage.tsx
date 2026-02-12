@@ -1,4 +1,4 @@
-import { Bot, Zap, Sparkles } from "lucide-react";
+import { Zap, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 

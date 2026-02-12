@@ -97,7 +97,7 @@ export default function SignInPage() {
             window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
           }}
         >
-          Sign in with Google
+          Sign In with Google
         </Button>
         <p className="text-center text-sm">
           Don’t have an account?{" "}
