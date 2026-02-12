@@ -4,7 +4,6 @@ import HomePage from "./pages/HomePage";
 import SignInPage from "./pages/SignIn";
 import OAuthCallback from "./pages/OAuthCallback";
 import { AboutPage } from "./pages/AboutPage";
-import { AboutMePage } from "./pages/AboutMePage";
 import RegisterPage from "./pages/RegisterPage";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -29,7 +28,6 @@ const App = () => {
               <Route path="/oauth-callback" element={<OAuthCallback />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/about" element={<AboutPage />} />
-              <Route path="/about-me" element={<AboutMePage />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
               {/* Settings & Profile routes */}

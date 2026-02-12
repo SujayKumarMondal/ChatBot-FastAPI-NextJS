@@ -25,8 +25,8 @@ export default function Homepage() {
     { role: "user" | "assistant"; content: string }[]
   >([{ role: "assistant", content: "Welcome! I'm here to assist you." }]);
 
-  // Get JWT token from localStorage
-  const getToken = () => localStorage.getItem("access_token") || "";
+  // Get JWT token from sessionStorage
+  const getToken = () => sessionStorage.getItem("access_token") || "";
 
   useEffect(() => {
     setChatID(chat_uid ? chat_uid : crypto.randomUUID());
