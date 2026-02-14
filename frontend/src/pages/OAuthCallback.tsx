@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 const OAuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signInWithTokens } = useAuth();
+  const { signInWithTokens, token } = useAuth();
   const exchangeAttemptedRef = useRef(false);
 
   useEffect(() => {
@@ -58,13 +58,19 @@ const OAuthCallback = () => {
 
         const data = await response.json();
         
-        // Ensure signInWithTokens completes before navigation
+        // Store token in sessionStorage FIRST (synchronous, reliable)
+        sessionStorage.setItem("access_token", data.access);
+        sessionStorage.setItem("refresh_token", data.refresh);
+        sessionStorage.setItem("user", JSON.stringify(data.user));
+        
+        // Then call signInWithTokens to update React state
         signInWithTokens(data.access, data.refresh, data.user);
         
-        // Small delay to ensure state is properly updated
+        // Navigate after a small delay to ensure sessionStorage is read by AppSidebar
+        // AppSidebar will also check sessionStorage as fallback
         setTimeout(() => {
           navigate('/');
-        }, 100);
+        }, 50);
       } catch (err: any) {
         console.error('Token exchange failed:', err);
         navigate('/signin', { state: { error: err.message } });

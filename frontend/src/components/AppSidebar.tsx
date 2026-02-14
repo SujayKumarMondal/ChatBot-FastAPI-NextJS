@@ -1,4 +1,3 @@
-// File: AppSidebar.tsx
 import {
   Bot,
   MessageSquare,
@@ -26,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link, NavLink } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   getSevenDaysChats,
   getTodaysChats,
@@ -50,10 +49,11 @@ export function AppSidebar() {
   const [recentChats, setRecentChats] = useState<IChat[]>([]);
   const [yesterdaysChats, setYesterdaysChat] = useState<IChat[]>([]);
   const [sevenDaysChats, setSevenDaysChat] = useState<IChat[]>([]);
-  const { user, refreshTrigger, token } = useAuth();
+  const { user, refreshTrigger, token, triggerSidebarRefresh } = useAuth();
   const { addToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const isMountedRef = useRef(true);
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
     chatId: string | null;
@@ -83,38 +83,79 @@ export function AppSidebar() {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchChatsData = async () => {
-    if (!token) {
-      setRecentChats([]);
-      setYesterdaysChat([]);
-      setSevenDaysChat([]);
+  const fetchChatsData = useCallback(async () => {
+    // Try to get token from context first, then fallback to sessionStorage
+    let tokenToUse = token || sessionStorage.getItem("access_token");
+    
+    // If still no token, wait a bit and try again (handles race condition)
+    if (!tokenToUse) {
+      console.log("No token available yet, waiting...");
+      await new Promise(resolve => setTimeout(resolve, 100));
+      tokenToUse = token || sessionStorage.getItem("access_token");
+    }
+    
+    if (!tokenToUse) {
+      console.log("No token available (context or sessionStorage), clearing chats");
+      if (isMountedRef.current) {
+        setRecentChats([]);
+        setYesterdaysChat([]);
+        setSevenDaysChat([]);
+      }
       return;
     }
+    
     try {
-      const today = await getTodaysChats(token);
-      setRecentChats(today || []);
-      const yesterday = await getYesterdaysChats(token);
-      setYesterdaysChat(yesterday || []);
-      const seven = await getSevenDaysChats(token);
-      setSevenDaysChat(seven || []);
-    } catch {
-      setRecentChats([]);
-      setYesterdaysChat([]);
-      setSevenDaysChat([]);
+      console.log("Fetching chats with token:", tokenToUse.substring(0, 10) + "...");
+      const [today, yesterday, seven] = await Promise.all([
+        getTodaysChats(tokenToUse),
+        getYesterdaysChats(tokenToUse),
+        getSevenDaysChats(tokenToUse),
+      ]);
+      
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setRecentChats(today || []);
+        setYesterdaysChat(yesterday || []);
+        setSevenDaysChat(seven || []);
+        console.log("✅ Chats loaded successfully", { 
+          todayCount: today?.length || 0,
+          yesterdayCount: yesterday?.length || 0,
+          sevenDaysCount: seven?.length || 0,
+          totalChats: (today?.length || 0) + (yesterday?.length || 0) + (seven?.length || 0)
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error fetching chats:", error);
+      if (isMountedRef.current) {
+        setRecentChats([]);
+        setYesterdaysChat([]);
+        setSevenDaysChat([]);
+      }
     }
-  };
+  }, [token]);
 
+  // Fetch chats when token changes (e.g., after OAuth sign-in) or when refreshTrigger changes
   useEffect(() => {
+    console.log("AppSidebar useEffect triggered - token:", !!token, "sessionStorageToken:", !!sessionStorage.getItem("access_token"), "refreshTrigger:", refreshTrigger);
     fetchChatsData();
-  }, [token, user, refreshTrigger]);
+  }, [token, refreshTrigger, fetchChatsData]);
 
+  // Also refetch when window regains focus
   useEffect(() => {
     const handleFocus = () => {
+      console.log("Window focus detected, refetching chats");
       fetchChatsData();
     };
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [token, user]);
+  }, [fetchChatsData]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const toggleFavorite = (chatId: string) => {
     const updateChats = (chats: IChat[]) =>
