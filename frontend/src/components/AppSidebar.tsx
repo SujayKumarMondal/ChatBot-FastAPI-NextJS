@@ -49,7 +49,7 @@ export function AppSidebar() {
   const [recentChats, setRecentChats] = useState<IChat[]>([]);
   const [yesterdaysChats, setYesterdaysChat] = useState<IChat[]>([]);
   const [sevenDaysChats, setSevenDaysChat] = useState<IChat[]>([]);
-  const { user, refreshTrigger, token, triggerSidebarRefresh } = useAuth();
+  const { user, refreshTrigger, token } = useAuth();
   const { addToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);

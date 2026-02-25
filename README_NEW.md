@@ -111,6 +111,55 @@ ChatPaat represents a modern, production-ready solution for intelligent conversa
 
 ---
 
+## 📸 Screenshots
+
+### 🏡 Home Page
+The landing page with quick access to start new conversations and view chat history.
+
+![Home Page](screenshots/Home.png)
+
+### 🏠 Home/Chat Interface
+The main chat interface where users interact with the AI assistant with real-time responses and message history.
+
+![Chat Interface](screenshots/ChatInterface.png)
+
+### 📝 Register
+User registration page for creating new accounts with email and password.
+
+![Register](screenshots/Register.png)
+
+### 🔑 Sign In
+Secure login page with JWT authentication and Google OAuth option.
+
+![Sign In](screenshots/SignIn.png)
+
+### 👤 Profile Information
+User profile management page showing account details and profile picture.
+
+![Profile Info](screenshots/ProfileInfo.png)
+
+### ⚙️ Settings
+Comprehensive settings page for managing account preferences and security.
+
+![Settings](screenshots/Settings.png)
+
+### 🔐 Password Management
+Password change and reset functionality for enhanced security.
+
+![Password](screenshots/Password.png)
+
+### 🗑️ Account Deletion
+Safe account deletion with confirmation dialog.
+
+![Delete Account](screenshots/Delete.png)
+
+### 🌙 Light Theme
+Beautiful light theme variant for day-time use.
+
+![Light Theme](screenshots/LightTheme.png)
+
+---
+
 ## 🏗️ Technology Stack
 
 ### **Backend**
