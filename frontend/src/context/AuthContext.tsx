@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false); // Auth restoration complete
   }, []);
 
-  // 🔹 Sign In (JWT login with Django backend)
+  // 🔹 Sign In (JWT login with FastAPI backend)
   const signIn = async (email: string, password: string) => {
   try {
     const response = await fetch("http://127.0.0.1:7004/api/login/", {
@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 
-  // 🔹 Register (calls Django backend)
+  // 🔹 Register (calls FastAPI backend)
   const register = async (username: string, email: string, password: string) => {
     try {
       const response = await fetch("http://127.0.0.1:7004/api/register/", {

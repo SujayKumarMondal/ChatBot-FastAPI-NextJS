@@ -4,7 +4,7 @@
 ```text
 # AI Chat App Frontend – React + Tailwind CSS
 
-This is the frontend of a Fullstack AI Chat Application built with React and Tailwind CSS. It provides a sleek and responsive chat interface that communicates with a Django REST API and the GPT-4 model via OpenAI.
+This is the frontend of a Fullstack AI Chat Application built with React and Tailwind CSS. It provides a sleek and responsive chat interface that communicates with a FastAPI and the GROQ model via OpenAI.
 
 ## ⚙️ Tech Stack
 - React (with Vite)
@@ -47,6 +47,5 @@ Visit: `http://localhost:5173`
 
 ## 🧠 How It Works
 
-* The frontend sends user messages to the Django API
-* Django relays them to OpenAI GPT-4 and returns the response
+* The frontend sends user messages to the FastAPI
 * React renders the conversation in a chat-style UI
