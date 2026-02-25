@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatPaat - AI-Powered Chat Assistant Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --darker: #111827;
+            --light: #f9fafb;
+            --lighter: #f3f4f6;
+            --border: #e5e7eb;
+            --text: #374151;
+            --text-light: #6b7280;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:rgba(102,126,234,0.1)"/><stop offset="100%" style="stop-color:rgba(118,75,162,0.1)"/></linearGradient></defs><rect fill="url(%23grad)" width="1200" height="600"/></svg>');
+            opacity: 0.5;
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(135deg, #667eea, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .docs-button {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.8rem 2rem;
+            background: linear-gradient(135deg, var(--accent), #f093fb);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(240, 147, 251, 0.4);
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .docs-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(240, 147, 251, 0.6);
+        }
+
+        .docs-button:active {
+            transform: translateY(-1px);
+        }
+
+        .header-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 2rem auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-box h3 {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-box p {
+            opacity: 0.8;
+            font-size: 0.95rem;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: -80px auto 0;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 2.2rem;
+            margin: 2rem 0 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        h3 {
+            color: var(--secondary);
+            font-size: 1.5rem;
+            margin: 1.5rem 0 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        h4 {
+            color: var(--dark);
+            font-size: 1.1rem;
+            margin: 1rem 0 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, var(--lighter) 0%, white 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102,126,234,0.2);
+        }
+
+        .feature-card h4 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .feature-card p {
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+            color: var(--text-light);
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .tech-section {
+            background: var(--lighter);
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .tech-section h4 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tech-list {
+            list-style: none;
+        }
+
+        .tech-list li {
+            padding: 0.5rem 0;
+            color: var(--text-light);
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .tech-list li:before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .endpoint {
+            background: linear-gradient(135deg, var(--lighter) 0%, white 100%);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid var(--success);
+        }
+
+        .endpoint.post {
+            border-left-color: var(--accent);
+        }
+
+        .endpoint.get {
+            border-left-color: var(--primary);
+        }
+
+        .endpoint.put {
+            border-left-color: var(--warning);
+        }
+
+        .endpoint.delete {
+            border-left-color: var(--danger);
+        }
+
+        .method {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-right: 1rem;
+            color: white;
+        }
+
+        .method.get {
+            background: var(--primary);
+        }
+
+        .method.post {
+            background: var(--accent);
+        }
+
+        .method.put {
+            background: var(--warning);
+        }
+
+        .method.delete {
+            background: var(--danger);
+        }
+
+        .endpoint-path {
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: var(--dark);
+            color: #10b981;
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+
+        .request-body, .response {
+            background: var(--darker);
+            color: #e5e7eb;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 1rem;
+            background: var(--lighter);
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .flow-step {
+            background: white;
+            border: 2px solid var(--primary);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            min-width: 150px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .flow-arrow {
+            color: var(--primary);
+            font-size: 1.5rem;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .db-schema {
+            background: var(--lighter);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid var(--secondary);
+        }
+
+        .db-table {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .db-table h5 {
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .db-fields {
+            list-style: none;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .db-fields li {
+            padding: 0.3rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .db-fields li:before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--secondary);
+        }
+
+        .workflow {
+            background: linear-gradient(135deg, var(--lighter) 0%, white 100%);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .workflow ol {
+            margin-left: 1.5rem;
+        }
+
+        .workflow li {
+            margin: 0.8rem 0;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .code-block {
+            background: var(--darker);
+            color: #10b981;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .alert-info {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .section-intro {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+        }
+
+        .section-intro h3 {
+            color: white;
+            margin-top: 0;
+        }
+
+        .component-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .component-item {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .component-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 5px 20px rgba(102,126,234,0.15);
+        }
+
+        .component-item h5 {
+            color: var(--primary);
+            margin: 0 0 0.5rem;
+            font-size: 1rem;
+        }
+
+        .component-item p {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        footer {
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        .toc {
+            background: var(--lighter);
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .toc h3 {
+            margin-top: 0;
+        }
+
+        .toc ul {
+            list-style: none;
+            columns: 2;
+            column-gap: 2rem;
+        }
+
+        .toc li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .toc li:before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+        }
+
+        .toc a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .toc a:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+
+            main {
+                margin-top: -40px;
+            }
+
+            .toc ul {
+                columns: 1;
+            }
+
+            .header-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🚀 ChatPaat Documentation</h1>
+        <p>Complete guide to AI-Powered Chat Assistant Platform</p>
+        <a href="README_NEW.md" target="_blank" class="docs-button">📖 View Full Technical Thesis & Documentation</a>
+        <div class="header-stats">
+            <div class="stat-box">
+                <h3>17+</h3>
+                <p>API Endpoints</p>
+            </div>
+            <div class="stat-box">
+                <h3>5+</h3>
+                <p>Database Models</p>
+            </div>
+            <div class="stat-box">
+                <h3>11+</h3>
+                <p>Frontend Pages</p>
+            </div>
+            <div class="stat-box">
+                <h3>Real-Time</h3>
+                <p>AI Responses</p>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Overview -->
+        <div class="container">
+            <h2>📋 Table of Contents</h2>
+            <div class="toc">
+                <ul>
+                    <li><a href="#overview">Project Overview</a></li>
+                    <li><a href="#features">Key Features</a></li>
+                    <li><a href="#tech-stack">Technology Stack</a></li>
+                    <li><a href="#api-endpoints">API Endpoints</a></li>
+                    <li><a href="#frontend">Frontend Implementation</a></li>
+                    <li><a href="#database">Database Schema</a></li>
+                    <li><a href="#workflows">Key Workflows</a></li>
+                    <li><a href="#security">Security</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="container" id="overview">
+            <h2>📖 Project Overview</h2>
+            <p style="font-size: 1.1rem; color: var(--text-light); margin-bottom: 1.5rem;">
+                <strong>ChatPaat</strong> is a revolutionary, full-stack AI-powered chat application built with modern technologies. It brings intelligent conversation capabilities to users with a focus on security, privacy, and exceptional user experience.
+            </p>
+
+            <div class="section-intro">
+                <h3>Core Objectives</h3>
+                <ul style="margin: 0; padding-left: 1.5rem;">
+                    <li>Enable seamless AI conversations with Groq's LLaMA 3.1 model</li>
+                    <li>Maintain complete user privacy with encrypted storage</li>
+                    <li>Provide intuitive, animated interface for optimal UX</li>
+                    <li>Support multiple authentication methods (email, Google OAuth)</li>
+                    <li>Persistent conversation history and user profiles</li>
+                </ul>
+            </div>
+
+            <h3>Technology Highlights</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>⚡ FastAPI Backend</h4>
+                    <p>Modern async Python framework with automatic API documentation and validation</p>
+                </div>
+                <div class="feature-card">
+                    <h4>⚛️ React Frontend</h4>
+                    <p>TypeScript-based UI with Vite bundler and TailwindCSS styling</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔐 JWT Authentication</h4>
+                    <p>Secure token-based auth with Google OAuth integration</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🤖 Groq AI Integration</h4>
+                    <p>State-of-the-art LLaMA 3.1 language model for intelligent responses</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🎨 Framer Motion</h4>
+                    <p>Professional animations and smooth transitions throughout</p>
+                </div>
+                <div class="feature-card">
+                    <h4>💾 SQLAlchemy ORM</h4>
+                    <p>Robust database layer with SQLite/PostgreSQL support</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="container" id="features">
+            <h2>✨ Key Features</h2>
+
+            <h3>🔐 Authentication & Security</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>JWT Authentication</h4>
+                    <p>Secure token-based authentication with automatic token refresh</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Google OAuth 2.0</h4>
+                    <p>One-click login with Google account integration</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Password Reset</h4>
+                    <p>Secure email-based password recovery with expiring tokens</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Account Management</h4>
+                    <p>Change password, update profile, delete account functionality</p>
+                </div>
+            </div>
+
+            <h3>💬 Chat Features</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Real-Time AI Chat</h4>
+                    <p>Instant responses from Groq's LLaMA 3.1 model</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Auto-Generated Titles</h4>
+                    <p>AI creates descriptive titles for each conversation</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Chat Organization</h4>
+                    <p>View chats from Today, Yesterday, or Last 7 Days</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Message Persistence</h4>
+                    <p>All conversations permanently stored in database</p>
+                </div>
+            </div>
+
+            <h3>👤 Profile & User Management</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Profile Information</h4>
+                    <p>Store and update username, email, first/last names</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Profile Pictures</h4>
+                    <p>Upload images with browser localStorage persistence</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Settings Dashboard</h4>
+                    <p>Comprehensive account settings and preferences</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Search History</h4>
+                    <p>Track and store user search queries</p>
+                </div>
+            </div>
+
+            <h3>🎨 UI/UX Excellence</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Smooth Animations</h4>
+                    <p>Framer Motion animations for all interactions</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Responsive Design</h4>
+                    <p>Perfect experience on mobile, tablet, and desktop</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Dark/Light Theme</h4>
+                    <p>Context-based theme switching with persistence</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Accessibility</h4>
+                    <p>Full keyboard navigation and screen reader support</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech Stack Section -->
+        <div class="container" id="tech-stack">
+            <h2>🛠️ Technology Stack</h2>
+
+            <div class="tech-stack">
+                <div class="tech-section">
+                    <h4>🔧 Backend</h4>
+                    <ul class="tech-list">
+                        <li>FastAPI - Web framework</li>
+                        <li>Python 3.x - Core language</li>
+                        <li>SQLAlchemy - ORM</li>
+                        <li>JWT - Authentication</li>
+                        <li>Bcrypt - Password hashing</li>
+                        <li>Groq API - LLM integration</li>
+                        <li>Alembic - Migrations</li>
+                        <li>SendGrid - Email service</li>
+                    </ul>
+                </div>
+                <div class="tech-section">
+                    <h4>⚛️ Frontend</h4>
+                    <ul class="tech-list">
+                        <li>React 18+ - UI library</li>
+                        <li>TypeScript - Type safety</li>
+                        <li>Vite - Build tool</li>
+                        <li>TailwindCSS - Styling</li>
+                        <li>Framer Motion - Animations</li>
+                        <li>Axios - HTTP client</li>
+                        <li>React Router - Navigation</li>
+                        <li>Context API - State management</li>
+                    </ul>
+                </div>
+                <div class="tech-section">
+                    <h4>🗄️ Database</h4>
+                    <ul class="tech-list">
+                        <li>SQLite - Default DB</li>
+                        <li>PostgreSQL - Production option</li>
+                        <li>SQLAlchemy ORM</li>
+                        <li>Alembic Migrations</li>
+                        <li>Indexed queries</li>
+                        <li>Cascading deletes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints Section -->
+        <div class="container" id="api-endpoints">
+            <h2>📡 API Endpoints</h2>
+
+            <div class="section-intro">
+                <h3>All 17+ Endpoints</h3>
+                <p>Complete REST API for all ChatPaat functionalities with JWT authentication</p>
+            </div>
+
+            <h3>🔐 Authentication Endpoints</h3>
+
+            <div class="endpoint post">
+                <span class="method post">POST</span>
+                <h4>/api/register/</h4>
+                <p><strong>Purpose:</strong> Create new user account</p>
+                <p><strong>Request:</strong></p>
+                <div class="request-body">{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "secure_password"
+}</div>
+                <p><strong>Response:</strong> Access token, refresh token, user info</p>
+            </div>
+
+            <div class="endpoint post">
+                <span class="method post">POST</span>
+                <h4>/api/login/</h4>
+                <p><strong>Purpose:</strong> Authenticate user and get JWT tokens</p>
+                <p><strong>Request:</strong></p>
+                <div class="request-body">{
+  "email": "john@example.com",
+  "password": "secure_password"
+}</div>
+                <p><strong>Response:</strong> Access token, refresh token, user info</p>
+            </div>
+
+            <div class="endpoint post">
+                <span class="method post">POST</span>
+                <h4>/api/auth/google/exchange/</h4>
+                <p><strong>Purpose:</strong> Exchange Google OAuth code for JWT tokens</p>
+                <p><strong>Request:</strong></p>
+                <div class="request-body">{
+  "code": "authorization_code",
+  "redirect_uri": "http://localhost:5173/oauth-callback"
+}</div>
+                <p><strong>Response:</strong> Local JWT access/refresh tokens</p>
+            </div>
+
+            <div class="endpoint post">
+                <span class="method post">POST</span>
+                <h4>/api/auth/password-reset/</h4>
+                <p><strong>Purpose:</strong> Request password reset via email</p>
+                <p><strong>Request:</strong></p>
+                <div class="request-body">{
+  "email": "john@example.com"
+}</div>
+            </div>
+
+            <div class="endpoint post">
+                <span class="method post">POST</span>
+                <h4>/api/auth/password-reset/confirm/</h4>
+                <p><strong>Purpose:</strong> Confirm password reset with token</p>
+                <p><strong>Request:</strong></p>
+                <div class="request-body">{
+  "token": "reset_token",
+  "new_password": "new_secure_password"
+}</div>
+            </div>
+
+            <h3>👤 Profile Endpoints</h3>
+
+            <div class="endpoint get">
+                <span class="method get">GET</span>
+                <h4>/api/profile/</h4>
+                <p><strong>Purpose:</strong> Get current user's profile</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Response:</strong> User profile data</p>
+            </div>
+
+            <div class="endpoint put">
+                <span class="method put">PUT</span>
+                <h4>/api/profile/</h4>
+                <p><strong>Purpose:</strong> Update user profile</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Request:</strong></p>
+                <div class="request-body">{
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "newemail@example.com"
+}</div>
+            </div>
+
+            <div class="endpoint post">
+                <span class="method post">POST</span>
+                <h4>/api/profile/upload-image/</h4>
+                <p><strong>Purpose:</strong> Upload profile picture</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Request:</strong> Multipart form data with image file</p>
+                <p><strong>Accepted Types:</strong> JPEG, PNG, GIF, WebP (max 5MB)</p>
+            </div>
+
+            <div class="endpoint post">
+                <span class="method post">POST</span>
+                <h4>/api/profile/change-password/</h4>
+                <p><strong>Purpose:</strong> Change user password</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Request:</strong></p>
+                <div class="request-body">{
+  "old_password": "current_password",
+  "new_password": "new_password"
+}</div>
+            </div>
+
+            <div class="endpoint delete">
+                <span class="method delete">DELETE</span>
+                <h4>/api/profile/</h4>
+                <p><strong>Purpose:</strong> Delete user account permanently</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Response:</strong> Confirmation with deleted user info</p>
+            </div>
+
+            <h3>💬 Chat Endpoints</h3>
+
+            <div class="endpoint post">
+                <span class="method post">POST</span>
+                <h4>/prompt_gpt/</h4>
+                <p><strong>Purpose:</strong> Send message to AI and get response</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Request:</strong></p>
+                <div class="request-body">{
+  "chat_id": "550e8400-e29b-41d4-a716-446655440000",
+  "content": "What is machine learning?"
+}</div>
+                <p><strong>Response:</strong> AI reply from Groq</p>
+                <p><strong>Features:</strong></p>
+                <ul style="margin: 0.5rem 0 0; padding-left: 1.5rem;">
+                    <li>Auto-creates chat if chat_id not provided</li>
+                    <li>Auto-generates descriptive title</li>
+                    <li>Maintains conversation history</li>
+                    <li>Includes system prompt for context</li>
+                </ul>
+            </div>
+
+            <div class="endpoint get">
+                <span class="method get">GET</span>
+                <h4>/get_chat_messages/{chat_id}/</h4>
+                <p><strong>Purpose:</strong> Get all messages from a chat</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Response:</strong> Array of messages with role and content</p>
+            </div>
+
+            <div class="endpoint get">
+                <span class="method get">GET</span>
+                <h4>/todays_chat/</h4>
+                <p><strong>Purpose:</strong> Get chats created today</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Response:</strong> Array of up to 10 chats from today</p>
+            </div>
+
+            <div class="endpoint get">
+                <span class="method get">GET</span>
+                <h4>/yesterdays_chat/</h4>
+                <p><strong>Purpose:</strong> Get chats from yesterday</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Response:</strong> Array of up to 10 chats</p>
+            </div>
+
+            <div class="endpoint get">
+                <span class="method get">GET</span>
+                <h4>/seven_days_chat/</h4>
+                <p><strong>Purpose:</strong> Get chats from last 7 days</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Response:</strong> Array of up to 10 chats</p>
+            </div>
+
+            <div class="endpoint delete">
+                <span class="method delete">DELETE</span>
+                <h4>/delete_chat/{chat_id}/</h4>
+                <p><strong>Purpose:</strong> Permanently delete a chat</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Response:</strong> Confirmation with chat ID</p>
+            </div>
+
+            <h3>🔍 Utility Endpoints</h3>
+
+            <div class="endpoint post">
+                <span class="method post">POST</span>
+                <h4>/api/store_search/</h4>
+                <p><strong>Purpose:</strong> Store search query history</p>
+                <p><strong>Headers:</strong> Authorization: Bearer &lt;token&gt;</p>
+                <p><strong>Request:</strong></p>
+                <div class="request-body">{
+  "search_query": "machine learning basics"
+}</div>
+            </div>
+
+            <div class="endpoint get">
+                <span class="method get">GET</span>
+                <h4>/health/</h4>
+                <p><strong>Purpose:</strong> API health check</p>
+                <p><strong>Response:</strong> Status: healthy</p>
+            </div>
+        </div>
+
+        <!-- Frontend Section -->
+        <div class="container" id="frontend">
+            <h2>⚛️ Frontend Implementation</h2>
+
+            <h3>Pages</h3>
+            <div class="component-list">
+                <div class="component-item">
+                    <h5>🏠 Home/Chat</h5>
+                    <p>Main chat interface with AI</p>
+                </div>
+                <div class="component-item">
+                    <h5>🔐 Sign In</h5>
+                    <p>Email/password authentication</p>
+                </div>
+                <div class="component-item">
+                    <h5>📝 Register</h5>
+                    <p>User account creation</p>
+                </div>
+                <div class="component-item">
+                    <h5>👤 Profile</h5>
+                    <p>User profile management</p>
+                </div>
+                <div class="component-item">
+                    <h5>⚙️ Settings</h5>
+                    <p>Account settings and preferences</p>
+                </div>
+                <div class="component-item">
+                    <h5>🔑 Forgot Password</h5>
+                    <p>Password recovery initiation</p>
+                </div>
+                <div class="component-item">
+                    <h5>🔄 Reset Password</h5>
+                    <p>Complete password reset</p>
+                </div>
+                <div class="component-item">
+                    <h5>ℹ️ About</h5>
+                    <p>Project information</p>
+                </div>
+                <div class="component-item">
+                    <h5>📋 Terms</h5>
+                    <p>Terms of service</p>
+                </div>
+                <div class="component-item">
+                    <h5>🔒 Privacy</h5>
+                    <p>Privacy policy</p>
+                </div>
+                <div class="component-item">
+                    <h5>🔗 OAuth</h5>
+                    <p>Google OAuth callback</p>
+                </div>
+            </div>
+
+            <h3>Components</h3>
+            <div class="component-list">
+                <div class="component-item">
+                    <h5>MainLayout</h5>
+                    <p>App shell with sidebar</p>
+                </div>
+                <div class="component-item">
+                    <h5>AppSidebar</h5>
+                    <p>Chat history navigation</p>
+                </div>
+                <div class="component-item">
+                    <h5>Message</h5>
+                    <p>Message display component</p>
+                </div>
+                <div class="component-item">
+                    <h5>Navbar</h5>
+                    <p>Top navigation bar</p>
+                </div>
+                <div class="component-item">
+                    <h5>TypingLoader</h5>
+                    <p>AI processing indicator</p>
+                </div>
+                <div class="component-item">
+                    <h5>PageTransition</h5>
+                    <p>Page animation wrapper</p>
+                </div>
+                <div class="component-item">
+                    <h5>LoginPrompt</h5>
+                    <p>Login encouragement modal</p>
+                </div>
+                <div class="component-item">
+                    <h5>Dashboard</h5>
+                    <p>Main dashboard layout</p>
+                </div>
+            </div>
+
+            <h3>State Management</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>AuthContext</h4>
+                    <p>User auth state, tokens, login/logout</p>
+                </div>
+                <div class="feature-card">
+                    <h4>ThemeContext</h4>
+                    <p>Dark/light theme preferences</p>
+                </div>
+                <div class="feature-card">
+                    <h4>ToastContext</h4>
+                    <p>Notification management</p>
+                </div>
+            </div>
+
+            <h3>Key Workflows</h3>
+
+            <h4>📝 Registration & Login</h4>
+            <div class="workflow">
+                <ol>
+                    <li>User enters credentials in form</li>
+                    <li>Frontend validates input</li>
+                    <li>API creates user with hashed password</li>
+                    <li>JWT tokens generated</li>
+                    <li>Tokens stored in localStorage</li>
+                    <li>User redirected to home page</li>
+                    <li>Session restored on page reload</li>
+                </ol>
+            </div>
+
+            <h4>💬 Chat Creation & Messaging</h4>
+            <div class="workflow">
+                <ol>
+                    <li>User types message in input</li>
+                    <li>Frontend creates/uses chat_id</li>
+                    <li>Message sent to /prompt_gpt/ endpoint</li>
+                    <li>Backend saves user message to DB</li>
+                    <li>Groq API called with conversation history</li>
+                    <li>Response saved to DB</li>
+                    <li>Frontend displays message with animation</li>
+                    <li>Auto-generated title assigned to chat</li>
+                </ol>
+            </div>
+
+            <h4>🖼️ Profile Picture Management</h4>
+            <div class="workflow">
+                <ol>
+                    <li>User selects image file</li>
+                    <li>Frontend displays preview</li>
+                    <li>User confirms upload</li>
+                    <li>Image converted to base64</li>
+                    <li>Stored in browser localStorage</li>
+                    <li>Retrieved on subsequent logins</li>
+                    <li>Persists across browser sessions</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Database Section -->
+        <div class="container" id="database">
+            <h2>🗄️ Database Schema</h2>
+
+            <h3>Data Models</h3>
+
+            <div class="db-schema">
+                <div class="db-table">
+                    <h5>📊 CustomUser</h5>
+                    <ul class="db-fields">
+                        <li>id: Integer (Primary Key)</li>
+                        <li>username: String (Unique)</li>
+                        <li>email: String (Unique)</li>
+                        <li>password: String (Hashed)</li>
+                        <li>first_name: String</li>
+                        <li>last_name: String</li>
+                        <li>is_active: Boolean</li>
+                        <li>date_joined: DateTime</li>
+                        <li>Relationships: chats, search_histories</li>
+                    </ul>
+                </div>
+
+                <div class="db-table">
+                    <h5>💬 Chat</h5>
+                    <ul class="db-fields">
+                        <li>id: String/UUID (Primary Key)</li>
+                        <li>user_id: Integer (Foreign Key)</li>
+                        <li>title: String (Auto-generated)</li>
+                        <li>created_at: DateTime</li>
+                        <li>updated_at: DateTime</li>
+                        <li>Relationships: user, messages</li>
+                    </ul>
+                </div>
+
+                <div class="db-table">
+                    <h5>📝 ChatMessage</h5>
+                    <ul class="db-fields">
+                        <li>id: Integer (Primary Key)</li>
+                        <li>chat_id: String (Foreign Key)</li>
+                        <li>role: String (user/assistant)</li>
+                        <li>content: Text</li>
+                        <li>created_at: DateTime</li>
+                        <li>Relationships: chat</li>
+                    </ul>
+                </div>
+
+                <div class="db-table">
+                    <h5>🔍 UserSearchHistory</h5>
+                    <ul class="db-fields">
+                        <li>id: Integer (Primary Key)</li>
+                        <li>user_id: Integer (Foreign Key)</li>
+                        <li>search_query: Text</li>
+                        <li>created_at: DateTime</li>
+                        <li>Relationships: user</li>
+                    </ul>
+                </div>
+
+                <div class="db-table">
+                    <h5>🔐 PasswordResetToken</h5>
+                    <ul class="db-fields">
+                        <li>id: Integer (Primary Key)</li>
+                        <li>user_id: Integer (Foreign Key)</li>
+                        <li>token_hash: String (Indexed)</li>
+                        <li>used: Boolean</li>
+                        <li>expires_at: DateTime</li>
+                        <li>created_at: DateTime</li>
+                        <li>Relationships: user</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>💡 Note:</strong> All foreign keys have cascading delete enabled. Relationships are properly indexed for optimal query performance.
+            </div>
+        </div>
+
+        <!-- Workflows Section -->
+        <div class="container" id="workflows">
+            <h2>🔄 Key Workflows</h2>
+
+            <h3>🔐 Authentication Flow</h3>
+            <div class="workflow">
+                <ol>
+                    <li><strong>User Registration:</strong> User submits username, email, password</li>
+                    <li><strong>Validation:</strong> Backend checks for existing username/email</li>
+                    <li><strong>Password Hashing:</strong> Password hashed with Bcrypt</li>
+                    <li><strong>User Creation:</strong> New user record created in database</li>
+                    <li><strong>Token Generation:</strong> JWT access and refresh tokens created</li>
+                    <li><strong>Client Storage:</strong> Tokens stored in localStorage</li>
+                    <li><strong>Auto-Login:</strong> User automatically logged in and redirected</li>
+                </ol>
+            </div>
+
+            <h3>💬 Chat Interaction Flow</h3>
+            <div class="workflow">
+                <ol>
+                    <li><strong>User Input:</strong> User types message in chat interface</li>
+                    <li><strong>Chat Creation:</strong> New chat created if chat_id not provided</li>
+                    <li><strong>Message Storage:</strong> User message saved to database</li>
+                    <li><strong>History Retrieval:</strong> Last 20 messages loaded from DB</li>
+                    <li><strong>AI Processing:</strong> Messages sent to Groq API</li>
+                    <li><strong>Response Generation:</strong> AI generates contextual response</li>
+                    <li><strong>Response Storage:</strong> Assistant message saved to DB</li>
+                    <li><strong>Display Update:</strong> Frontend displays both messages with animations</li>
+                    <li><strong>Title Generation:</strong> AI creates chat title if new</li>
+                </ol>
+            </div>
+
+            <h3>🖼️ Profile Management Flow</h3>
+            <div class="workflow">
+                <ol>
+                    <li><strong>Profile Access:</strong> User navigates to profile page</li>
+                    <li><strong>Data Fetch:</strong> Current profile data loaded from API</li>
+                    <li><strong>Display:</strong> Profile information displayed in form</li>
+                    <li><strong>Edit Mode:</strong> User can edit fields inline</li>
+                    <li><strong>Image Upload:</strong> User selects profile picture</li>
+                    <li><strong>Preview:</strong> Image shown before confirmation</li>
+                    <li><strong>Base64 Conversion:</strong> Image converted to data URL</li>
+                    <li><strong>Storage:</strong> Image stored in browser localStorage</li>
+                    <li><strong>Persistence:</strong> Image retrieved on next login</li>
+                </ol>
+            </div>
+
+            <h3>🔑 Password Reset Flow</h3>
+            <div class="workflow">
+                <ol>
+                    <li><strong>Request Initiation:</strong> User clicks "Forgot Password"</li>
+                    <li><strong>Email Entry:</strong> User enters their email address</li>
+                    <li><strong>Token Generation:</strong> Secure reset token created</li>
+                    <li><strong>Token Storage:</strong> Token hash stored in database with expiry</li>
+                    <li><strong>Email Send:</strong> Reset link sent to user's email</li>
+                    <li><strong>Link Click:</strong> User clicks link in email</li>
+                    <li><strong>Token Validation:</strong> Token verified and checked for expiry</li>
+                    <li><strong>Password Update:</strong> User enters new password</li>
+                    <li><strong>Hash Storage:</strong> New password hashed and stored</li>
+                    <li><strong>Token Invalidation:</strong> Reset token marked as used</li>
+                    <li><strong>Success Message:</strong> User redirected to login</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Security Section -->
+        <div class="container" id="security">
+            <h2>🔒 Security Features</h2>
+
+            <div class="alert alert-success">
+                <strong>✅ Security Implemented:</strong> ChatPaat follows industry best practices for security
+            </div>
+
+            <h3>Authentication Security</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>JWT Tokens</h4>
+                    <p>Secure, stateless authentication with token expiration</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Bcrypt Hashing</h4>
+                    <p>Industry-standard password hashing with salt</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Token Refresh</h4>
+                    <p>Automatic token refresh for seamless sessions</p>
+                </div>
+                <div class="feature-card">
+                    <h4>CORS Protection</h4>
+                    <p>Cross-origin requests restricted to trusted domains</p>
+                </div>
+            </div>
+
+            <h3>Data Protection</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>User Isolation</h4>
+                    <p>Chat access controlled per authenticated user</p>
+                </div>
+                <div class="feature-card">
+                    <h4>SQL Injection Prevention</h4>
+                    <p>SQLAlchemy ORM prevents SQL injection attacks</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Input Validation</h4>
+                    <p>Pydantic models validate all API inputs</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Secure Headers</h4>
+                    <p>CORS and content security headers configured</p>
+                </div>
+            </div>
+
+            <h3>Email Security</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Reset Token Expiry</h4>
+                    <p>Password reset tokens expire after 1 hour</p>
+                </div>
+                <div class="feature-card">
+                    <h4>One-Time Tokens</h4>
+                    <p>Reset tokens marked as used after confirmation</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Token Hashing</h4>
+                    <p>Tokens hashed before database storage</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Email Verification</h4>
+                    <p>Passwords reset only through verified email</p>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ Security Best Practices:</strong>
+                <ul style="margin: 0.5rem 0 0; padding-left: 1.5rem;">
+                    <li>Always use HTTPS in production</li>
+                    <li>Store sensitive env variables securely</li>
+                    <li>Implement rate limiting for login attempts</li>
+                    <li>Regular security audits and updates</li>
+                    <li>Monitor API logs for suspicious activity</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Getting Started -->
+        <div class="container">
+            <h2>🚀 Getting Started</h2>
+
+            <h3>Backend Setup</h3>
+            <div class="code-block">cd fastapi_backend
+python -m venv venv
+./venv/Scripts/activate
+pip install -r requirements.txt
+python fastapi_server.py</div>
+
+            <h3>Frontend Setup</h3>
+            <div class="code-block">cd frontend
+npm install
+npm run dev</div>
+
+            <h3>Environment Variables</h3>
+            <div class="code-block"># .env
+GROQ_API_KEY=your_groq_key
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+VITE_API_URL=http://127.0.0.1:7004</div>
+
+            <div class="alert alert-success">
+                <strong>✅ Ready to Go:</strong> Backend runs on http://127.0.0.1:7004 and Frontend on http://localhost:5173
+            </div>
+        </div>
+
+        <!-- Additional Features -->
+        <div class="container">
+            <h2>📊 Additional Features</h2>
+
+            <h3>Analytics & Tracking</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Search History</h4>
+                    <p>Track all user search queries</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Chat Statistics</h4>
+                    <p>View chats organized by time periods</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Last Login</h4>
+                    <p>Track user last login timestamps</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Conversation Metrics</h4>
+                    <p>Count messages and chats per user</p>
+                </div>
+            </div>
+
+            <h3>Responsive Features</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Mobile Optimized</h4>
+                    <p>Touch-friendly interface for all devices</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Adaptive Layout</h4>
+                    <p>Components adjust to screen size</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Fast Loading</h4>
+                    <p>Optimized for performance on slow connections</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Offline Support</h4>
+                    <p>LocalStorage for offline functionality</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="container">
+            <h2>📈 Project Summary</h2>
+
+            <div class="grid-2">
+                <div>
+                    <h3>Backend Highlights</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li>✅ 17+ REST API endpoints</li>
+                        <li>✅ JWT authentication</li>
+                        <li>✅ Google OAuth integration</li>
+                        <li>✅ Groq AI integration</li>
+                        <li>✅ Password reset flow</li>
+                        <li>✅ Profile management</li>
+                        <li>✅ Chat history tracking</li>
+                        <li>✅ Search history storage</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Frontend Highlights</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li>✅ 11+ pages</li>
+                        <li>✅ Real-time chat interface</li>
+                        <li>✅ Smooth animations</li>
+                        <li>✅ Responsive design</li>
+                        <li>✅ Dark/light theme</li>
+                        <li>✅ Profile management</li>
+                        <li>✅ Image upload</li>
+                        <li>✅ Context-based state management</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert alert-info" style="margin-top: 2rem;">
+                <strong>🎉 Comprehensive Solution:</strong> ChatPaat is a fully-featured, production-ready AI chat application with robust backend, beautiful frontend, and excellent user experience.
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p><strong>ChatPaat Documentation</strong></p>
+        <p>Complete AI-Powered Chat Assistant Platform | Built with ❤️ using FastAPI & React</p>
+        <p style="margin-top: 1rem; opacity: 0.7;">© 2025 to <span id="currentYear">2026</span> ChatPaat. All rights reserved.</p>
+        <script>
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        </script>
+    </footer>
+</body>
+</html>
