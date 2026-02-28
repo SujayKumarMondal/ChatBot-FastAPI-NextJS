@@ -18,9 +18,11 @@ const MainLayout = () => {
   return (
      <SidebarProvider>
       <AppSidebar />
-      <main className="w-full h-screen flex flex-col">
+      <main className="w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-secondary/5">
         <Navbar />
-        {<Outlet />}
+        <div className="flex-1 overflow-y-auto">
+          {<Outlet />}
+        </div>
       </main>
     </SidebarProvider>
   )

@@ -11,6 +11,7 @@ import LoginPrompt from "@/components/LoginPrompt";
 import { promptGPT } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 export default function Homepage() {
   const location = useLocation();
@@ -25,8 +26,8 @@ export default function Homepage() {
     { role: "user" | "assistant"; content: string }[]
   >([{ role: "assistant", content: "Welcome! I'm here to assist you." }]);
 
-  // Get JWT token from localStorage
-  const getToken = () => localStorage.getItem("access_token") || "";
+  // Get JWT token from sessionStorage
+  const getToken = () => sessionStorage.getItem("access_token") || "";
 
   useEffect(() => {
     setChatID(chat_uid ? chat_uid : crypto.randomUUID());
@@ -147,30 +148,42 @@ export default function Homepage() {
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {messages.map((msg, idx) =>
             msg.role === "user" ? (
-              <div
+              <motion.div
                 key={idx}
-                className="w-full mx-auto p-4 rounded-xl bg-primary text-primary-foreground self-end"
+                className="w-full mx-auto p-4 rounded-xl bg-primary text-primary-foreground self-end animate-message-enter"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
               >
                 {msg.content}
-              </div>
+              </motion.div>
             ) : (
-              <div
+              <motion.div
                 key={idx}
-                className="prose dark:prose-invert max-w-none bg-muted text-foreground p-4 rounded-lg shadow mb-4 relative group"
+                className="prose dark:prose-invert max-w-none bg-muted text-foreground p-4 rounded-lg shadow mb-4 relative group animate-message-enter"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
               >
                 <ReactMarkdown
                   components={{
                     code({ inline, className, children }: any) {
                       const match = /language-(\w+)/.exec(className || "");
                       return !inline && match ? (
-                        <SyntaxHighlighter
-                          style={vs2015}
-                          language={match[1]}
-                          PreTag="div"
-                          className="rounded-md"
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.2 }}
                         >
-                          {String(children).replace(/\n$/, "")}
-                        </SyntaxHighlighter>
+                          <SyntaxHighlighter
+                            style={vs2015}
+                            language={match[1]}
+                            PreTag="div"
+                            className="rounded-md"
+                          >
+                            {String(children).replace(/\n$/, "")}
+                          </SyntaxHighlighter>
+                        </motion.div>
                       ) : (
                         <code className="bg-muted rounded px-1 py-0.5 text-sm">
                           {children}
@@ -181,18 +194,20 @@ export default function Homepage() {
                 >
                   {msg.content}
                 </ReactMarkdown>
-                <button
+                <motion.button
                   onClick={() => handleCopyMessage(msg.content, idx)}
-                  className="absolute top-2 right-2 p-2 rounded-md bg-muted hover:bg-muted/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-2 right-2 p-2 rounded-md bg-muted hover:bg-muted/80 opacity-0 group-hover:opacity-100 transition-all"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
                   title="Copy message to clipboard"
                 >
                   {copiedIndex === idx ? (
-                    <Check size={18} className="text-green-500" />
+                    <Check size={18} className="text-green-500 animate-bounce-in" />
                   ) : (
                     <Copy size={18} className="text-foreground" />
                   )}
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             )
           )}
 
@@ -201,29 +216,41 @@ export default function Homepage() {
         </div>
 
         {/* Input */}
-        <div className="border-t p-4 sticky bottom-0 z-50 bg-background text-foreground">
+        <motion.div
+          className="border-t p-4 sticky bottom-0 z-50 bg-background text-foreground"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
           <div className="max-w-2xl mx-auto flex items-center gap-4">
-            <Textarea
-              placeholder="Ask me anything..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              className="flex-1 resize-none min-h-[80px] max-h-[200px] rounded-md border border-input bg-muted/40 px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground shadow-sm transition"
-            />
+            <motion.div
+              className="flex-1"
+              whileFocus="focused"
+            >
+              <Textarea
+                placeholder="Ask me anything..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                className="flex-1 resize-none min-h-[80px] max-h-[200px] rounded-md border border-input bg-muted/40 px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground shadow-sm transition"
+              />
+            </motion.div>
 
-            <button
+            <motion.button
               onClick={handleSend}
               className="p-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
             >
               <SendHorizonalIcon size={18} className="cursor-pointer" />
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
       </div>
       {/* Footer */}
       <footer className="w-full text-center py-4 text-xs text-muted-foreground bg-background border-t">

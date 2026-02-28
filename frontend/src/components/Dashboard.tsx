@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { MessageSquare, Clock, Zap, TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { motion } from "framer-motion";
 
 interface DashboardStats {
   totalChats: number;
@@ -11,10 +12,40 @@ interface DashboardStats {
   topicBreakdown: { topic: string; count: number }[];
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4 },
+  },
+};
+
+const numberVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: { opacity: 1, scale: 1 },
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [displayedValues, setDisplayedValues] = useState({
+    totalChats: 0,
+    totalMessages: 0,
+    streakDays: 0,
+  });
 
   useEffect(() => {
     // Simulate loading dashboard stats
@@ -43,6 +74,17 @@ export default function Dashboard() {
     setTimeout(() => {
       setStats(mockStats);
       setLoading(false);
+
+      // Animate counter numbers
+      const interval = setInterval(() => {
+        setDisplayedValues((prev) => ({
+          totalChats: Math.min(prev.totalChats + 2, mockStats.totalChats),
+          totalMessages: Math.min(prev.totalMessages + 5, mockStats.totalMessages),
+          streakDays: Math.min(prev.streakDays + 1, mockStats.streakDays),
+        }));
+      }, 50);
+
+      return () => clearInterval(interval);
     }, 500);
   }, [user]);
 
@@ -55,109 +97,169 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8 p-8">
+    <motion.div
+      className="space-y-8 p-6 md:p-8 bg-gradient-to-br from-background via-background to-primary/5 animate-gradient-shift"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Welcome back, {user?.username}!</h1>
-        <p className="text-muted-foreground mt-2">Here's your activity overview</p>
-      </div>
+      <motion.div variants={itemVariants}>
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+          Welcome back, {user?.username}! 👋
+        </h1>
+        <p className="text-muted-foreground mt-2 text-lg">Here's your activity overview for today</p>
+      </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          icon={<MessageSquare className="h-6 w-6 text-primary" />}
-          label="Total Chats"
-          value={stats.totalChats}
-          subtext="All conversations"
-        />
-        <StatsCard
-          icon={<Zap className="h-6 w-6 text-accent" />}
-          label="Total Messages"
-          value={stats.totalMessages}
-          subtext="In all chats"
-        />
-        <StatsCard
-          icon={<Clock className="h-6 w-6 text-blue-500" />}
-          label="Avg Response"
-          value={`${stats.avgResponseTime}s`}
-          subtext="Response time"
-        />
-        <StatsCard
-          icon={<TrendingUp className="h-6 w-6 text-green-500" />}
-          label="Current Streak"
-          value={`${stats.streakDays} days`}
-          subtext="Keep it going!"
-        />
-      </div>
-
-      {/* Charts Section - Requires recharts 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card rounded-lg border border-border p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-foreground">Weekly Activity</h3>
-          <p className="text-muted-foreground">Charts require additional setup</p>
-        </div>
-        <div className="bg-card rounded-lg border border-border p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-foreground">Topic Breakdown</h3>
-          <p className="text-muted-foreground">Charts require additional setup</p>
-        </div>
-      </div>
-      */}
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        variants={containerVariants}
+      >
+        <motion.div variants={itemVariants}>
+          <StatsCard
+            icon={<MessageSquare className="h-6 w-6" />}
+            label="Total Chats"
+            value={displayedValues.totalChats}
+            subtext="All conversations"
+            color="from-primary to-primary/60"
+          />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatsCard
+            icon={<Zap className="h-6 w-6" />}
+            label="Total Messages"
+            value={displayedValues.totalMessages}
+            subtext="In all chats"
+            color="from-accent to-accent/60"
+          />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatsCard
+            icon={<Clock className="h-6 w-6" />}
+            label="Avg Response"
+            value={`${stats.avgResponseTime}s`}
+            subtext="Response time"
+            color="from-blue-500 to-blue-400"
+          />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatsCard
+            icon={<TrendingUp className="h-6 w-6" />}
+            label="Current Streak"
+            value={`${displayedValues.streakDays} days`}
+            subtext="Keep it going!"
+            color="from-green-500 to-green-400"
+          />
+        </motion.div>
+      </motion.div>
 
       {/* Quick Actions */}
-      <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border border-primary/20 p-6">
-        <h3 className="text-lg font-semibold mb-4 text-foreground">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <QuickAction label="New Chat" icon="+" color="bg-primary/20" />
-          <QuickAction label="View History" icon="📜" color="bg-blue-500/20" />
-          <QuickAction label="Export Chats" icon="📥" color="bg-green-500/20" />
-          <QuickAction label="Settings" icon="⚙️" color="bg-purple-500/20" />
-        </div>
-      </div>
-    </div>
+      <motion.div
+        className="bg-gradient-to-br from-secondary/20 to-accent/20 border border-secondary/30 rounded-2xl p-6 shadow-lg shadow-secondary/10 animate-gradient-flow"
+        variants={itemVariants}
+      >
+        <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
+          ✨ Quick Actions
+        </h3>
+        <motion.div
+          className="grid grid-cols-2 md:grid-cols-4 gap-3"
+          variants={containerVariants}
+        >
+          <motion.div variants={itemVariants}>
+            <QuickAction label="New Chat" icon="➕" color="bg-gradient-to-br from-primary/40 to-primary/20" />
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <QuickAction label="View History" icon="📜" color="bg-gradient-to-br from-blue-500/40 to-blue-400/20" />
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <QuickAction label="Export Chats" icon="📥" color="bg-gradient-to-br from-green-500/40 to-green-400/20" />
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <QuickAction label="Settings" icon="⚙️" color="bg-gradient-to-br from-purple-500/40 to-purple-400/20" />
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }
 
-function StatsCard({ icon, label, value, subtext }: any) {
+function StatsCard({ icon, label, value, subtext, color }: any) {
   return (
-    <div className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-shadow animate-slideIn">
+    <motion.div
+      className={`bg-gradient-to-br ${color} border border-white/20 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all transform hover:scale-105 hover:-translate-y-1 backdrop-blur-sm`}
+      whileHover={{ scale: 1.05, y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       <div className="flex items-start justify-between mb-4">
-        <div>{icon}</div>
-        <TrendingUp className="h-4 w-4 text-green-500" />
+        <div className="text-white/80 animate-bounce-soft">{icon}</div>
+        <TrendingUp className="h-4 w-4 text-green-300" />
       </div>
       <div>
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="text-2xl font-bold text-foreground mt-1">{value}</p>
-        <p className="text-xs text-muted-foreground mt-1">{subtext}</p>
+        <p className="text-sm text-white/70 font-medium">{label}</p>
+        <motion.p
+          className="text-3xl font-bold text-white mt-2 animate-number-count"
+          variants={numberVariants}
+        >
+          {value}
+        </motion.p>
+        <p className="text-xs text-white/60 mt-1">{subtext}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function QuickAction({ label, icon, color }: any) {
   return (
-    <button
-      className={`${color} rounded-lg p-4 text-center hover:shadow-md transition-all transform hover:scale-105`}
+    <motion.button
+      className={`${color} border border-white/20 rounded-xl p-4 text-center hover:shadow-lg hover:border-white/40 transition-all transform backdrop-blur-sm group w-full`}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
     >
-      <div className="text-2xl mb-2">{icon}</div>
-      <p className="text-xs font-medium text-foreground">{label}</p>
-    </button>
+      <motion.div
+        className="text-3xl mb-2 transition-transform group-hover:scale-125"
+        whileHover={{ rotate: 10, scale: 1.2 }}
+      >
+        {icon}
+      </motion.div>
+      <p className="text-sm font-semibold text-foreground">{label}</p>
+    </motion.button>
   );
 }
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-8 p-8">
-      <div className="h-10 bg-muted rounded-lg w-48 animate-shimmer" />
+    <motion.div
+      className="space-y-8 p-6 md:p-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <motion.div
+        className="h-12 bg-gradient-to-r from-primary/30 to-accent/30 rounded-xl w-48 animate-shimmer-enhanced"
+        animate={{ opacity: [1, 0.5, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-card rounded-lg p-6 h-32 animate-shimmer" />
+          <motion.div
+            key={i}
+            className="bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl p-6 h-32 animate-skeleton-pulse border border-white/10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+          />
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {[...Array(2)].map((_, i) => (
-          <div key={i} className="bg-card rounded-lg p-6 h-64 animate-shimmer" />
-        ))}
-      </div>
-    </div>
+      <motion.div
+        className="bg-gradient-to-br from-secondary/20 to-accent/20 rounded-2xl p-6 h-40 animate-shimmer-enhanced border border-white/10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      />
+    </motion.div>
   );
 }
