@@ -35,7 +35,7 @@ app.add_middleware(
     max_age=3600,
 )
 
-# Include routes
+# Include API routes
 app.include_router(router)
 
 

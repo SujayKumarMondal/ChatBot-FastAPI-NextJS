@@ -4,7 +4,9 @@ import uuid
 from datetime import datetime, timedelta
 import requests
 import base64
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status, Header, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -253,9 +255,13 @@ def create_chat_title(user_message: str) -> str:
 # ======================= Default ========================== #
 
 @router.get("/")
-def read_root():
-    """Root endpoint"""
-    return {"message": "Welcome to ChatPaat API"}
+async def read_root():
+    """Serve the documentation homepage"""
+    root_dir = Path(__file__).parent.parent
+    index_path = root_dir / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path, media_type="text/html")
+    return {"message": "ChatPaat Documentation - Visit /docs for API documentation"}
 
 
 @router.get("/health/")

@@ -12,6 +12,7 @@ import TermsPage from "./pages/TermsPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
+import PageTransition from "./components/PageTransition";
 
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -24,22 +25,22 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               {/* Auth routes */}
-              <Route path="/signin" element={<SignInPage />} />
-              <Route path="/oauth-callback" element={<OAuthCallback />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/about" element={<AboutPage />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/signin" element={<PageTransition><SignInPage /></PageTransition>} />
+              <Route path="/oauth-callback" element={<PageTransition><OAuthCallback /></PageTransition>} />
+              <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
+              <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
+              <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
+              <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
               {/* Settings & Profile routes */}
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
+              <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
               {/* App layout */}
               <Route path="/" element={<MainLayout />}>
-                <Route index element={<HomePage />} />
-                <Route path="chats/:chat_uid" element={<HomePage />} />
-                <Route path="chats/new" element={<HomePage />} />
-                <Route path="/terms" element={<TermsPage />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route index element={<PageTransition><HomePage /></PageTransition>} />
+                <Route path="chats/:chat_uid" element={<PageTransition><HomePage /></PageTransition>} />
+                <Route path="chats/new" element={<PageTransition><HomePage /></PageTransition>} />
+                <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
+                <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
               </Route>
             </Routes>
           </BrowserRouter>
