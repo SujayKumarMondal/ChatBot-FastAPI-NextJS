@@ -217,12 +217,12 @@ export default function Homepage() {
 
         {/* Input */}
         <motion.div
-          className="border-t p-4 sticky bottom-0 z-50 bg-background text-foreground"
+          className="border-t p-3 sticky bottom-[33px] z-50 bg-background text-foreground"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="max-w-2xl mx-auto flex items-center gap-4">
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
             <motion.div
               className="flex-1"
               whileFocus="focused"
@@ -237,7 +237,7 @@ export default function Homepage() {
                     handleSend();
                   }
                 }}
-                className="flex-1 resize-none min-h-[80px] max-h-[200px] rounded-md border border-input bg-muted/40 px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground shadow-sm transition"
+                className="flex-1 resize-none min-h-[50px] max-h-[150px] rounded-md border border-input bg-muted/40 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground shadow-sm transition"
               />
             </motion.div>
 
@@ -253,7 +253,7 @@ export default function Homepage() {
         </motion.div>
       </div>
       {/* Footer */}
-      <footer className="w-full text-center py-4 text-xs text-muted-foreground bg-background border-t">
+      <footer className="w-full text-center py-3 text-xs text-muted-foreground bg-background border-t sticky bottom-0 z-40">
         By messaging ChatPaat, you agree to our{' '}
         <Link to="/terms" className="underline hover:text-primary">Terms</Link> and have read our{' '}
         <Link to="/privacy-policy" className="underline hover:text-primary">Privacy Policy</Link>.

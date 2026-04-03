@@ -10,6 +10,10 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+import hashlib
+from auth import SECRET_KEY
+from datetime import timezone
+import secrets, hashlib
 
 from db import get_db
 from models import CustomUser, Chat, ChatMessage, UserSearchHistory, PasswordResetToken
@@ -53,9 +57,6 @@ def password_reset(req: PasswordResetRequest, db: Session = Depends(get_db)):
     """
     user = db.query(CustomUser).filter(CustomUser.email == req.email).first()
     if user:
-        import secrets, hashlib
-        from auth import SECRET_KEY
-        from datetime import timezone
         token = secrets.token_urlsafe(48)
         token_hash = hashlib.sha256((token + SECRET_KEY).encode()).hexdigest()
         expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
@@ -82,9 +83,6 @@ def password_reset_confirm(req: PasswordResetConfirm, db: Session = Depends(get_
     - **new_password**: New password to set
     - Returns: Success or error if token is invalid/expired
     """
-    import hashlib
-    from auth import SECRET_KEY
-    from datetime import timezone
     token_hash = hashlib.sha256((req.token + SECRET_KEY).encode()).hexdigest()
     now = datetime.now(timezone.utc)
     prt = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash, PasswordResetToken.used == False, PasswordResetToken.expires_at > now).first()
@@ -679,6 +677,7 @@ def upload_profile_image(
                 "email": user.email,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "image": user.image,
                 "image": user.image
             }
         }

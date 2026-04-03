@@ -1,125 +1,164 @@
-import { Zap, Sparkles } from "lucide-react";
+import { Zap, Sparkles, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 
 export const AboutPage = () => {
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-10">
-      {/* Page Header with Logo */}
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
+      {/* Header */}
       <motion.div
-        className="flex items-center mb-6 gap-4"
+        className="flex items-center gap-4"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
       >
-        <img 
-          src="/brand_logo.png" 
-          alt="ChatPaat Logo" 
-          className="h-16 w-16 hover:scale-110 transition-transform" 
+        <img
+          src="/brand_logo.png"
+          alt="ChatPaat Logo"
+          className="h-14 w-14 hover:scale-110 transition-transform"
         />
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-          About ChatPaat
+        <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+          ChatPaat
         </h1>
       </motion.div>
 
-      {/* Introduction Card */}
-      <motion.div
-        className="bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 border border-primary/20 rounded-2xl shadow-lg shadow-primary/20 p-8 hover:shadow-2xl transition-all duration-300"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-      >
-        <p className="text-foreground mb-6 text-lg leading-relaxed">
-          <strong className="text-primary">ChatPaat</strong> is a
-          next-generation{" "}
-          <span className="font-semibold text-accent">
-            AI-powered chatbot
-          </span>{" "}
-          designed to make your interactions smarter, faster, and more engaging.
-          Built with{" "}
-          <Badge className="bg-primary/20 text-primary">Django</Badge> backend
-          and a{" "}
-          <Badge className="bg-secondary/20 text-secondary">React</Badge> frontend,
-          ChatPaat leverages{" "}
-          <Badge className="bg-accent/20 text-accent">GROQ</Badge> to
-          deliver highly accurate, context-aware responses.
-        </p>
-        <ul className="list-disc list-inside text-foreground space-y-3 text-base">
-          <li>
-            <Zap className="inline w-4 h-4 text-accent mr-2" />
-            <strong>Ask anything:</strong> From casual chats to technical
-            queries, ChatPaat responds intelligently.
-          </li>
-          <li>
-            <Sparkles className="inline w-4 h-4 text-primary mr-2" />
-            <strong>Speed & Reliability:</strong> Django ensures efficiency,
-            React keeps it smooth.
-          </li>
-          <li>
-            <strong className="text-primary">GROQ-powered intelligence:</strong>{" "}
-            Understands complex queries with context.
-          </li>
-          <li>
-            <strong className="text-secondary">Organized Conversations:</strong>{" "}
-            Access chats & summaries with ease.
-          </li>
-        </ul>
-      </motion.div>
+      {/* Main Grid */}
+      <div className="grid md:grid-cols-2 gap-5">
+        {/* About + Why Combined */}
+        <motion.div
+          className="bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 border border-primary/20 rounded-2xl p-6 shadow-md hover:shadow-xl transition"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h2 className="text-xl font-bold mb-3 text-primary">
+            About & Why ChatPaat
+          </h2>
 
-      {/* Why ChatPaat Section */}
-      <motion.div
-        className="bg-secondary/5 border border-secondary/30 rounded-2xl shadow-md p-8 hover:shadow-xl transition-all duration-300"
-        initial={{ opacity: 0, x: -40 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-      >
-        <h2 className="text-2xl font-bold text-secondary mb-4">
-          Why ChatPaat?
-        </h2>
-        <p className="text-foreground mb-3 leading-relaxed">
-          ChatPaat isn't just a chatbot—it's your{" "}
-          <span className="font-semibold text-primary">
-            digital companion
-          </span>
-          , learning from interactions and adapting to give you more relevant
-          responses over time.
-        </p>
-        <p className="text-foreground leading-relaxed">
-          Whether you're exploring AI, boosting productivity, or just having
-          fun, ChatPaat is your{" "}
-          <span className="font-semibold text-accent">go-to chat buddy</span>.
-        </p>
-      </motion.div>
+          <p className="text-sm leading-relaxed text-foreground mb-4">
+            <strong className="text-primary">ChatPaat</strong> is a{" "}
+            <span className="text-accent font-semibold">full-stack AI chat platform</span> with{" "}
+            <Badge className="bg-primary/20 text-primary">FastAPI</Badge> backend and{" "}
+            <Badge className="bg-secondary/20 text-secondary">React frontend</Badge>,
+            powered by{" "}
+            <Badge className="bg-accent/20 text-accent">Groq LLaMA 3.1</Badge>.
+            It provides intelligent, secure conversations with enterprise-grade authentication.
+          </p>
 
-      {/* Tech Stack */}
-      <motion.div
-        className="bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 border border-primary/20 rounded-2xl shadow-md p-8 hover:shadow-2xl transition-all duration-300"
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-      >
-        <h2 className="text-2xl font-bold text-primary mb-5">Tech Stack</h2>
-        <ul className="flex flex-wrap gap-4">
-          <li>
-            <Badge className="bg-primary/30 text-primary px-4 py-2 rounded-full shadow">
-              Django
-            </Badge>
-          </li>
-          <li>
-            <Badge className="bg-secondary/30 text-secondary px-4 py-2 rounded-full shadow">
-              React
-            </Badge>
-          </li>
-          <li>
-            <Badge className="bg-accent/30 text-accent px-4 py-2 rounded-full shadow">
-              GROQ (Graph-Relational Object Queries)
-            </Badge>
-          </li>
-        </ul>
-      </motion.div>
+          <div className="space-y-2 text-sm">
+            <p>
+              <Zap className="inline w-4 h-4 text-accent mr-2" />
+              Lightning-fast AI responses with LLaMA 3.1-8b model
+            </p>
+            <p>
+              <Sparkles className="inline w-4 h-4 text-primary mr-2" />
+              Persistent chat history with intelligent organization
+            </p>
+            <p>
+              <ShieldAlert className="inline w-4 h-4 text-secondary mr-2" />
+              Secure JWT auth + Google OAuth integration
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Tech Stack */}
+        <motion.div
+          className="bg-gradient-to-br from-secondary/10 to-accent/10 border border-secondary/20 rounded-2xl p-6 shadow-md hover:shadow-xl transition"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h2 className="text-xl font-bold mb-4 text-secondary">
+            Tech Stack
+          </h2>
+
+          <div className="space-y-3">
+            <div className="text-xs">
+              <p className="font-semibold text-secondary mb-1">Frontend</p>
+              <p className="text-muted-foreground">React 18 + TypeScript, Vite, Tailwind CSS</p>
+            </div>
+            <div className="text-xs">
+              <p className="font-semibold text-secondary mb-1">Backend</p>
+              <p className="text-muted-foreground">FastAPI, Python 3.x, JWT + OAuth 2.0</p>
+            </div>
+            <div className="text-xs">
+              <p className="font-semibold text-secondary mb-1">AI Engine</p>
+              <p className="text-muted-foreground">Groq LLaMA 3.1-8b-instant model</p>
+            </div>
+            <div className="text-xs">
+              <p className="font-semibold text-secondary mb-1">Database</p>
+              <p className="text-muted-foreground">SQLite (dev) / PostgreSQL (production)</p>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground mt-4">
+            Built for scalability, security, and seamless AI interactions.
+          </p>
+        </motion.div>
+
+        {/* Features */}
+        <motion.div
+          className="bg-gradient-to-br from-accent/10 to-primary/10 border border-accent/20 rounded-2xl p-6 shadow-md hover:shadow-xl transition"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h2 className="text-xl font-bold mb-3 text-accent">
+            Key Features
+          </h2>
+
+          <ul className="text-sm space-y-2">
+            <li>✨ Real-time AI conversations with LLaMA 3.1 model</li>
+            <li>💾 Persistent chat history with time-based organization</li>
+            <li>🔐 Enterprise-grade security: JWT tokens & OAuth 2.0</li>
+            <li>📱 Fully responsive design across all devices</li>
+            <li>⚡ Lightning-fast performance via Groq API</li>
+            <li>🎨 Beautiful UI with Framer Motion animations</li>
+            <li>📧 Secure password reset with email integration</li>
+            <li>👤 Complete profile management & account control</li>
+          </ul>
+        </motion.div>
+
+        {/* Architecture Highlights */}
+        <motion.div
+          className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-2xl p-6 shadow-md hover:shadow-xl transition"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h2 className="text-xl font-bold mb-4 text-blue-400">
+            Architecture Highlights
+          </h2>
+
+          <div className="space-y-2 text-xs">
+            <p><span className="font-semibold text-blue-400">🎯 Scalable Design:</span> <span className="text-muted-foreground">Microservice-ready with clear API boundaries</span></p>
+            <p><span className="font-semibold text-purple-400">🔒 Production-Ready:</span> <span className="text-muted-foreground">Error handling, validation, CORS, and security hardened</span></p>
+            <p><span className="font-semibold text-blue-400">⚙️ Modern Stack:</span> <span className="text-muted-foreground">Latest frameworks ensuring long-term maintainability</span></p>
+            <p><span className="font-semibold text-purple-400">📊 Flexible DB:</span> <span className="text-muted-foreground">PostgreSQL</span></p>
+          </div>
+        </motion.div>
+
+        {/* Use Cases */}
+        <motion.div
+          className="md:col-span-2 bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/15 rounded-2xl p-6 shadow-md hover:shadow-xl transition"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h2 className="text-xl font-bold mb-4 text-primary">
+            Who Should Use ChatPaat?
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <p className="font-semibold text-primary mb-2">💼 Professionals</p>
+              <p className="text-muted-foreground">Boost productivity with quick research, brainstorming, and task assistance</p>
+            </div>
+            <div>
+              <p className="font-semibold text-secondary mb-2">🎓 Students</p>
+              <p className="text-muted-foreground">Learn concepts, get explanations, and explore topics in depth with context awareness</p>
+            </div>
+            <div>
+              <p className="font-semibold text-accent mb-2">👨‍💻 Developers</p>
+              <p className="text-muted-foreground">Code debugging, algorithm design, and technical documentation support</p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };
