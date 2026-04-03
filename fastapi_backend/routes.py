@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 import hashlib
+
+# from win32comext import authorization
 from auth import SECRET_KEY
 from datetime import timezone
 import secrets, hashlib
@@ -21,6 +23,15 @@ from auth import (
     hash_password, verify_password, create_access_token,
     create_refresh_token, verify_token, SECRET_KEY
 )
+
+# Database Configuration (from db.py)
+USE_POSTGRES = os.getenv("USE_POSTGRES", "").lower() == "true"
+DB_NAME = os.getenv("DB_NAME", "")
+DB_USER = os.getenv("DB_USER", "")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+
 # Google OAuth settings
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -264,8 +275,17 @@ async def read_root():
 
 @router.get("/health/")
 def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
+    """Health check endpoint with database info"""
+    return {
+        "status": "healthy",
+        "database": {
+            "type": "PostgreSQL" if USE_POSTGRES else "SQLite",
+            "host": DB_HOST if USE_POSTGRES else "local",
+            "port": DB_PORT if USE_POSTGRES else "N/A",
+            "database": DB_NAME if USE_POSTGRES else "db.sqlite3",
+            "user": DB_USER if USE_POSTGRES else "N/A"
+        }
+    }
 
 
 @router.post("/api/store_search/")
@@ -1025,5 +1045,223 @@ def delete_chat(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting chat: {str(e)}"
         )
+
+
+# ======================= Data Export Endpoints =======================
+
+@router.get("/api/data/customuser/", tags=["Data Export"])
+def get_all_custom_users(
+    # authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all CustomUser records in JSON format
+    """
+    # user = get_current_user(db)
+    
+    users = db.query(CustomUser).all()
+    
+    return {
+        "count": len(users),
+        "data": [
+            {
+                "id": u.id,
+                "username": u.username,
+                "email": u.email,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "date_joined": u.date_joined,
+            }
+            for u in users
+        ]
+    }
+
+
+@router.get("/api/data/customuser/{user_id}", tags=["Data Export"])
+def get_custom_user_by_id(
+    user_id: int,
+    # authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific CustomUser by ID in JSON format
+    """
+    # user = get_current_user(authorization, db)
+    
+    target_user = db.query(CustomUser).filter(CustomUser.id == user_id).first()
+    
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return {
+        "id": target_user.id,
+        "username": target_user.username,
+        "email": target_user.email,
+        "first_name": target_user.first_name,
+        "last_name": target_user.last_name,
+        "date_joined": target_user.date_joined,
+    }
+
+
+@router.get("/api/data/chat/", tags=["Data Export"])
+def get_all_chats(
+    db: Session = Depends(get_db)
+):
+    """
+    Get all Chat records in JSON format (all users' chats)
+    """
+    chats = db.query(Chat).all()
+    
+    return {
+        "count": len(chats),
+        "data": [
+            {
+                "id": chat.id,
+                "user_id": chat.user_id,
+                "title": chat.title,
+                "created_at": chat.created_at,
+                "updated_at": chat.updated_at
+            }
+            for chat in chats
+        ]
+    }
+
+
+@router.get("/api/data/chat/{chat_id}", tags=["Data Export"])
+def get_chat_by_id(
+    chat_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific Chat record by ID in JSON format
+    """
+    chat = db.query(Chat).filter(Chat.id == chat_id).first()
+    
+    if not chat:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat not found"
+        )
+    
+    return {
+        "id": chat.id,
+        "user_id": chat.user_id,
+        "title": chat.title,
+        "created_at": chat.created_at,
+        "updated_at": chat.updated_at
+    }
+
+
+@router.get("/api/data/chat/by-user-id/{user_id}", tags=["Data Export"])
+def get_chats_by_user_id(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all Chat records for a specific user in JSON format
+    """
+    chats = db.query(Chat).filter(Chat.user_id == user_id).all()
+    
+    if not chats:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No chats found for this user"
+        )
+    
+    return {
+        "user_id": user_id,
+        "count": len(chats),
+        "data": [
+            {
+                "id": chat.id,
+                "user_id": chat.user_id,
+                "title": chat.title,
+                "created_at": chat.created_at,
+                "updated_at": chat.updated_at
+            }
+            for chat in chats
+        ]
+    }
+
+
+@router.get("/api/data/usersearchhistory/", tags=["Data Export"])
+def get_all_search_history(
+    db: Session = Depends(get_db)
+):
+    """
+    Get all UserSearchHistory records in JSON format
+    """
+    search_history = db.query(UserSearchHistory).all()
+    
+    return {
+        "count": len(search_history),
+        "data": [
+            {
+                "id": sh.id,
+                "user_id": sh.user_id,
+                "search_query": sh.search_query,
+                "created_at": sh.created_at
+            }
+            for sh in search_history
+        ]
+    }
+
+
+@router.get("/api/data/usersearchhistory/{history_id}", tags=["Data Export"])
+def get_search_history_by_id(
+    history_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific UserSearchHistory record by ID in JSON format
+    """
+    search_history = db.query(UserSearchHistory).filter(UserSearchHistory.id == history_id).first()
+    
+    if not search_history:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Search history record not found"
+        )
+    
+    return {
+        "id": search_history.id,
+        "user_id": search_history.user_id,
+        "search_query": search_history.search_query,
+        "created_at": search_history.created_at
+    }
+
+
+@router.get("/api/data/usersearchhistory/by-user-id/{user_id}", tags=["Data Export"])
+def get_search_history_by_user_id(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all UserSearchHistory records for a specific user in JSON format
+    """
+    search_history = db.query(UserSearchHistory).filter(UserSearchHistory.user_id == user_id).all()
+    
+    if not search_history:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No search history found for this user"
+        )
+    
+    return {
+        "user_id": user_id,
+        "count": len(search_history),
+        "data": [
+            {
+                "id": sh.id,
+                "user_id": sh.user_id,
+                "search_query": sh.search_query,
+                "created_at": sh.created_at
+            }
+            for sh in search_history
+        ]
+    }
 
 
