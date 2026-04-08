@@ -8,6 +8,9 @@ import {
   Archive,
   Trash2,
   AlertTriangle,
+  Github,
+  Linkedin,
+  Globe,
 } from "lucide-react";
 
 import {
@@ -21,7 +24,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { Link, NavLink } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -425,20 +428,41 @@ export function AppSidebar() {
             <Archive className="h-4 w-4" />
             {showArchived ? "Hide" : "Show"} Archived
           </Button>
-          <a
-            href="https://sujaykumarmondal.github.io/portfolio/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between bg-gradient-to-r from-primary/30 to-accent/30 hover:from-primary/40 hover:to-accent/40 px-3 py-2 rounded-lg transition text-xs font-semibold border border-primary/40 shadow-md shadow-primary/10"
-          >
+          <div className="flex items-center justify-between bg-gradient-to-r from-primary/30 to-accent/30 hover:from-primary/40 hover:to-accent/40 px-3 py-2 rounded-lg transition text-xs font-semibold border border-primary/40 shadow-md shadow-primary/10">
             <span className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               Developer
             </span>
-            <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-accent/30 text-accent">
-              Check
-            </Badge>
-          </a>
+            <div className="flex items-center gap-2">
+              <a
+                href="https://sujaykumarmondal.github.io/portfolio/" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 rounded hover:bg-primary/20 transition"
+                title="Portfolio"
+              >
+                <Globe className="w-3.5 h-3.5 text-white" />
+              </a>
+              <a
+                href="https://www.linkedin.com/in/sujay-kumar-mondal-a125481b7/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 rounded hover:bg-primary/20 transition"
+                title="LinkedIn"
+              >
+                <Linkedin className="w-3.5 h-3.5 text-white" />
+              </a>
+              <a
+                href="https://github.com/SujayKumarMondal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 rounded hover:bg-primary/20 transition"
+                title="GitHub"
+              >
+                <Github className="w-3.5 h-3.5 text-white" />
+              </a>
+            </div>
+          </div>
         </div>
       </SidebarContent>
 
