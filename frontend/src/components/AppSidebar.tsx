@@ -52,7 +52,7 @@ export function AppSidebar() {
   const [recentChats, setRecentChats] = useState<IChat[]>([]);
   const [yesterdaysChats, setYesterdaysChat] = useState<IChat[]>([]);
   const [sevenDaysChats, setSevenDaysChat] = useState<IChat[]>([]);
-  const { user, refreshTrigger, token } = useAuth();
+  const { refreshTrigger, token } = useAuth();
   const { addToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
@@ -308,7 +308,7 @@ export function AppSidebar() {
         <div className="space-y-4">
           {/* ⏰ IST Clock */}
           <div className="px-4 pt-4 pb-2 text-center">
-            <div className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent flex items-center justify-center gap-2">
+            <div className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent flex items-center justify-center gap-2 pr-8">
               <span className="animate-pulse text-lg">🕒</span>
               {time} IST
             </div>
@@ -398,36 +398,33 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
           )}
-
-          {/* About */}
-          <SidebarGroup className="mt-auto">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link
-                    to="/about"
-                    className="flex items-center gap-3 px-4 py-2 hover:bg-primary/20 rounded-lg transition-all text-sm font-semibold"
-                  >
-                    <Bot className="w-5 h-5 text-primary" />
-                    <span>About</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
         </div>
 
         {/* Footer Actions */}
-        <div className="px-4 py-3 border-t border-primary/20 space-y-2 bg-gradient-to-t from-primary/5 to-transparent">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 text-xs hover:bg-primary/20 transition-all"
-            onClick={() => setShowArchived(!showArchived)}
-          >
-            <Archive className="h-4 w-4" />
-            {showArchived ? "Hide" : "Show"} Archived
-          </Button>
+        <div className="px-4 py-3 border-t border-primary/20 bg-gradient-to-t from-primary/5 to-transparent space-y-2">
+          {/* About and Show Archived Side-by-Side */}
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 gap-2 text-xs hover:bg-primary/20 transition-all border border-primary/30"
+              asChild
+            >
+              <Link to="/about">
+                <Bot className="h-4 w-4" />
+                <span>About</span>
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 gap-2 text-xs hover:bg-primary/20 transition-all border border-primary/30"
+              onClick={() => setShowArchived(!showArchived)}
+            >
+              <Archive className="h-4 w-4" />
+              {showArchived ? "Hide" : "Archived"}
+            </Button>
+          </div>
           <div className="flex items-center justify-between bg-gradient-to-r from-primary/30 to-accent/30 hover:from-primary/40 hover:to-accent/40 px-3 py-2 rounded-lg transition text-xs font-semibold border border-primary/40 shadow-md shadow-primary/10">
             <span className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
