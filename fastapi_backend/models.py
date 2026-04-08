@@ -17,7 +17,7 @@ class CustomUser(Base):
     password = Column(String(128), nullable=False)
     first_name = Column(String(150), nullable=False, default='')
     last_name = Column(String(150), nullable=False, default='')
-    # image = Column(Text, nullable=True)  # Store base64 or image URL
+    image = Column(Text, nullable=True)  # Store base64 or image URL
     is_active = Column(Boolean, default=True)
     is_staff = Column(Boolean, default=False)
     is_superuser = Column(Boolean, default=False)
