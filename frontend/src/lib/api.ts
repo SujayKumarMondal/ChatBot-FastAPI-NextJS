@@ -105,6 +105,78 @@ export async function deleteChat(chatId: string, token: string) {
   }
 }
 
+// 🔹 Get all chats with pagination
+export async function getAllChats(
+  token: string,
+  skip: number = 0,
+  limit: number = 50,
+  search: string = ""
+) {
+  try {
+    const response = await api.get("/api/chats/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: { skip, limit, search },
+    });
+    return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+// 🔹 Update chat title
+export async function updateChatTitle(
+  chatId: string,
+  title: string,
+  token: string
+) {
+  try {
+    const response = await api.put(`/api/chats/${chatId}/`, { title }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+// 🔹 Get chat messages with pagination
+export async function getChatMessagesPaginated(
+  chatId: string,
+  token: string,
+  skip: number = 0,
+  limit: number = 100
+) {
+  try {
+    const response = await api.get(`/api/chats/${chatId}/messages/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: { skip, limit },
+    });
+    return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+// 🔹 Export all chats
+export async function exportAllChats(token: string) {
+  try {
+    const response = await api.get("/api/export/chats/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
 // ======================= Profile Management =======================
 
 // 🔹 Upload profile image

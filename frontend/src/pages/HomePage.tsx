@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { SendHorizonalIcon, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -13,6 +13,16 @@ import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
+interface MessageType {
+  role: "user" | "assistant";
+  content: string;
+}
+
+const WELCOME_MESSAGE: MessageType = {
+  role: "assistant",
+  content: "Welcome! I'm here to assist you.",
+};
+
 export default function Homepage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -22,107 +32,178 @@ export default function Homepage() {
   const [input, setInput] = useState("");
   const [chatID, setChatID] = useState("");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-  const [messages, setMessages] = useState<
-    { role: "user" | "assistant"; content: string }[]
-  >([{ role: "assistant", content: "Welcome! I'm here to assist you." }]);
+  const [messages, setMessages] = useState<MessageType[]>([WELCOME_MESSAGE]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasLoadedChatRef = useRef<{ [key: string]: boolean }>({});
 
   // Get JWT token from sessionStorage
   const getToken = () => sessionStorage.getItem("access_token") || "";
 
+  // Initialize chat ID based on route
   useEffect(() => {
-    setChatID(chat_uid ? chat_uid : crypto.randomUUID());
+    const newChatID = chat_uid || crypto.randomUUID();
+    setChatID(newChatID);
   }, [chat_uid]);
 
-  useEffect(() => {
-    if (!user) {
-      setMessages([]);
-    }
-  }, [user]);
+  // // Auto scroll to bottom when new messages arrive
+  // const scrollToBottom = useCallback(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, []);
 
-  // 🔹 Send message
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [messages, scrollToBottom]);
+
+  // 🔹 Send message mutation with proper refetch
   const mutation = useMutation({
-    mutationFn: ({ chat_id, content }: { chat_id: string; content: string }) =>
-      promptGPT({ chat_id, content }, getToken()),
+    mutationFn: ({ chat_id, content }: { chat_id: string; content: string }) => {
+      console.log(`📤 Sending message to chat ${chat_id}`);
+      return promptGPT({ chat_id, content }, getToken());
+    },
     onSuccess: (res) => {
-      console.log("Groq Response:", res);
+      console.log("✅ Message sent successfully, response:", res);
       if (res?.reply) {
         setMessages((prev) => [
           ...prev,
           { role: "assistant", content: res.reply },
         ]);
-        // Invalidate chat data to ensure it's in sync
+        // Invalidate cache to force refetch
         queryClient.invalidateQueries({ queryKey: ["chatMessages", chatID] });
+        console.log(`🔄 Invalidated cache for chat ${chatID}`);
       }
     },
     onError: (error: any) => {
+      console.error("❌ Error sending message:", error);
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `⚠️ Error: Please log in to use the service. ${error.message}`,
+          content: `⚠️ Error: ${error.message || "Failed to send message. Please check your connection."}`,
         },
       ]);
     },
   });
 
-  // 🔹 Fetch old chat messages
-  const { data: chatData } = useQuery({
+  // 🔹 Fetch chat messages for existing chat
+  const { data: chatData, isLoading: isLoadingChatData, refetch: refetchMessages } = useQuery({
     queryKey: ["chatMessages", chatID],
     queryFn: async () => {
-      const res = await fetch(`http://127.0.0.1:7004/get_chat_messages/${chatID}/`, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
-      });
-      if (!res.ok) return []; // prevent blank screen
-      return res.json();
+      const token = getToken();
+      if (!token) {
+        console.warn("❌ No auth token available");
+        return [];
+      }
+
+      try {
+        setIsLoadingMessages(true);
+        console.log(`📨 Fetching messages for chat: ${chatID}`);
+        const res = await fetch(`http://127.0.0.1:7004/get_chat_messages/${chatID}/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log(`📦 Response status: ${res.status}`);
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error(`❌ Failed to fetch messages: ${res.status} ${res.statusText} - ${errorText}`);
+          return [];
+        }
+
+        const data = await res.json();
+        console.log(`✅ Received ${Array.isArray(data) ? data.length : 0} messages from API`);
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("🔥 Error fetching chat messages:", error);
+        return [];
+      } finally {
+        setIsLoadingMessages(false);
+      }
     },
-    enabled: !!chatID,
+    enabled: !!chatID && !!getToken(),
+    staleTime: Infinity, // Don't auto-refetch, only manual refetch
+    cacheTime: 1000 * 60 * 30, // Keep cache for 30 minutes
+    retry: 2, // Retry failed requests twice
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
+  // Update messages when chat data is loaded - CRITICAL: Load chat history properly
   useEffect(() => {
-    if (chatID && Array.isArray(chatData)) {
-      setMessages(
-        chatData.map((m: any) => ({
+    if (!chatID) return;
+
+    // Prevent reloading the same chat
+    if (hasLoadedChatRef.current[chatID]) {
+      return;
+    }
+
+    // If API call is still loading, wait
+    if (isLoadingChatData) {
+      return;
+    }
+
+    // API call is done loading
+    hasLoadedChatRef.current[chatID] = true;
+
+    // We have a real chat_uid in the URL (existing chat)
+    if (chat_uid) {
+      // Load messages from API - use them even if empty array
+      if (chatData && Array.isArray(chatData)) {
+        const loadedMessages = chatData.map((m: any) => ({
           role: m.role,
           content: m.content,
-        }))
-      );
+        }));
+        // Set messages (even if empty) to prevent showing welcome message on existing chat
+        setMessages(loadedMessages.length > 0 ? loadedMessages : []);
+        console.log(`✅ Loaded ${loadedMessages.length} messages for chat ${chatID}`);
+      } else {
+        // API failed but we have a chat_uid, show empty state
+        setMessages([]);
+        console.warn(`⚠️ No messages found for existing chat ${chatID}`);
+      }
+    } else {
+      // New chat (no chat_uid in URL) - show welcome message
+      setMessages([WELCOME_MESSAGE]);
+      console.log(`🆕 New chat created: ${chatID}`);
     }
-  }, [chatID, chatData]);
-
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (location.pathname === "/" || location.pathname === "/chats/new") {
-      setMessages([
-        { role: "assistant", content: "Welcome! I'm here to assist you." },
-      ]);
-    }
-  }, [location.pathname]);
-
-  // Removed auto-scroll to bottom on message change
+  }, [chatID, chatData, isLoadingChatData, chat_uid]);
 
   const handleSend = () => {
     if (!input.trim()) return;
-
-    if (location.pathname === "/" || location.pathname === "/chats/new") {
-      navigate(`/chats/${chatID}`);
+    if (!user) {
+      console.warn("⚠️ User not authenticated");
+      return;
     }
 
-    const newMessage = { role: "user", content: input };
+    console.log(`📝 handleSend called - chat_uid: ${chat_uid}, chatID: ${chatID}`);
+
+    // If starting a NEW chat (no URL param), navigate first
+    if (!chat_uid) {
+      console.log(`🆕 New chat - navigating to /chats/${chatID}`);
+      navigate(`/chats/${chatID}`);
+      // Note: Navigation is async, but we'll send message anyway
+      // React Router will update the URL, which triggers chat_uid change
+      // The message will be cached, and new chat data will be fetched
+    }
+
+    // Add user message to UI immediately
+    const userMessage: MessageType = { role: "user", content: input };
     setMessages((prev) =>
-      [...prev, newMessage].filter(
-        (p) => p.content !== "Welcome! I'm here to assist you."
-      ) as { role: "user" | "assistant"; content: string }[]
+      prev.filter((m) => m.content !== WELCOME_MESSAGE.content).concat([userMessage])
     );
 
-    mutation.mutate({ chat_id: chatID, content: input });
-    setInput("");
+    const messageContent = input;
+    setInput(""); // Clear input immediately
 
+    // Send message to backend
+    console.log(`🚀 Mutating with chatID: ${chatID}`);
+    mutation.mutate({ chat_id: chatID, content: messageContent });
+
+    // Update search history and sidebar
     if (user) {
-      storeUserSearch(input);
-      // Invalidate sidebar chats to show new chat immediately
+      storeUserSearch(messageContent);
       queryClient.invalidateQueries({ queryKey: ["todaysChats"] });
       queryClient.invalidateQueries({ queryKey: ["yesterdaysChats"] });
       queryClient.invalidateQueries({ queryKey: ["sevenDaysChats"] });
@@ -146,11 +227,17 @@ export default function Homepage() {
       <div className="flex flex-col flex-1 bg-background text-foreground">
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {isLoadingMessages && (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading chat history...</div>
+            </div>
+          )}
+          
           {messages.map((msg, idx) =>
             msg.role === "user" ? (
               <motion.div
                 key={idx}
-                className="w-full mx-auto p-4 rounded-xl bg-primary text-primary-foreground self-end animate-message-enter"
+                className="w-full mx-auto p-4 rounded-xl bg-primary text-primary-foreground self-end animate-message-enter ml-auto max-w-mg"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
@@ -212,7 +299,7 @@ export default function Homepage() {
           )}
 
           {mutation.isPending && <TypingLoader />}
-          <div ref={bottomRef} />
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
@@ -243,7 +330,8 @@ export default function Homepage() {
 
             <motion.button
               onClick={handleSend}
-              className="p-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition"
+              disabled={mutation.isPending || !input.trim()}
+              className="p-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
