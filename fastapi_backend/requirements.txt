@@ -1,11 +1,13 @@
+setuptools==70.0.0
+wheel==0.42.0
+pip>=24.0
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 gunicorn==21.2.0
-sqlalchemy==2.0.23
+sqlalchemy==2.0.25
 alembic==1.13.1
 python-dotenv==1.0.0
-pydantic==2.5.0
-pydantic-core==2.14.6
+pydantic==2.5.3
 pydantic-settings==2.1.0
 python-multipart==0.0.6
 requests==2.31.0
@@ -17,5 +19,3 @@ bcrypt==4.1.1
 argon2-cffi==23.1.0
 psycopg2-binary==2.9.9
 sendgrid==6.11.0
-setuptools>=65.0
-wheel>=0.38.0
