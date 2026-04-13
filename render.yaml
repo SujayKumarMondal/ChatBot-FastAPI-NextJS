@@ -7,6 +7,7 @@ services:
   - type: web
     name: chatpaat-api
     env: python
+    pythonVersion: 3.11
     region: oregon  # Change based on your needs
     plan: starter
     
@@ -15,8 +16,8 @@ services:
     
     buildCommand: |
       cd fastapi_backend && \
-      pip install --upgrade pip && \
-      pip install -r requirements.txt && \
+      pip install --upgrade pip setuptools wheel && \
+      pip install --no-cache-dir -r requirements.txt && \
       alembic upgrade head
     
     startCommand: |
@@ -25,6 +26,7 @@ services:
         --timeout 120 \
         --access-logfile - \
         --error-logfile - \
+        --bind 0.0.0.0:${PORT:-10000} \
         fastapi_server:app
     
     envVars:
@@ -58,11 +60,14 @@ services:
     
     healthCheckPath: /health
     healthCheckInterval: 300
+    envSecrets:
+      - name: DATABASE_URL
     
   # Frontend Service
   - type: web
     name: chatpaat-web
     env: node
+    nodeVersion: 20
     region: oregon
     plan: starter
     
