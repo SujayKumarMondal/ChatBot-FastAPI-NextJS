@@ -1,0 +1,1 @@
+web: cd fastapi_backend && gunicorn -w 4 -k uvicorn.workers.UvicornWorker fastapi_server:app
