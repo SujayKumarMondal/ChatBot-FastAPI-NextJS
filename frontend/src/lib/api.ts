@@ -49,45 +49,14 @@ export async function getChatMessages(chatId: string, token: string) {
   }
 }
 
-// 🔹 Today's chats
-export async function getTodaysChats(token: string) {
+// 🔹 Get all chats for a user
+export async function getChatsByUserId(userId: number) {
   try {
-    const response = await api.get("/todays_chat/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
+    const response = await api.get(`/api/data/chat/by-user-id/${userId}`);
+    return response.data.data || [];
   } catch (err: unknown) {
-    handleError(err);
-  }
-}
-
-// 🔹 Yesterday's chats
-export async function getYesterdaysChats(token: string) {
-  try {
-    const response = await api.get("/yesterdays_chat/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
-  } catch (err: unknown) {
-    handleError(err);
-  }
-}
-
-// 🔹 Last 7 days chats
-export async function getSevenDaysChats(token: string) {
-  try {
-    const response = await api.get("/seven_days_chat/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
-  } catch (err: unknown) {
-    handleError(err);
+    console.error("Error fetching chats:", err);
+    return [];
   }
 }
 

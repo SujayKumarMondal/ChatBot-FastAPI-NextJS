@@ -8,6 +8,7 @@ import {
 import { getProfileImageByEmail } from "@/lib/imageStorage";
 
 interface User {
+  id: number;
   username: string;
   email: string;
   image?: string;
@@ -42,7 +43,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const savedUser = sessionStorage.getItem("user");
     const savedToken = sessionStorage.getItem("access_token");
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      console.log("🔄 Restoring user from sessionStorage:", parsedUser);
+      setUser(parsedUser);
     }
     if (savedToken) {
       setToken(savedToken);
@@ -65,6 +68,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const data = await response.json();
+    console.log("🔐 Login response received:", data);
+    
     sessionStorage.setItem("access_token", data.access);
     sessionStorage.setItem("refresh_token", data.refresh);
     setToken(data.access);
@@ -72,11 +77,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Try to get stored image from localStorage, fallback to dicebear
     const storedImage = getProfileImageByEmail(email);
     const userProfile: User = {
+      id: data.user.id,
       username: data.user.username,
       email: data.user.email,
       image: storedImage || `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.email}`,
     };
 
+    console.log("👤 Setting user profile:", userProfile);
     setUser(userProfile);
     sessionStorage.setItem("user", JSON.stringify(userProfile));
     setRefreshTrigger(prev => prev + 1); // Trigger refetch in sidebar
@@ -109,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Save user profile from register response
       const userProfile: User = {
+        id: data.user.id,
         username: data.user.username,
         email: data.user.email,
         image: `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.email}`,

@@ -365,6 +365,7 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
         "access": access_token,
         "refresh": refresh_token,
         "user": {
+            "id": new_user.id,
             "username": new_user.username,
             "email": new_user.email
         }
@@ -400,6 +401,7 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
         "access": access_token,
         "refresh": refresh_token,
         "user": {
+            "id": user.id,
             "username": user.username,
             "email": user.email
         }
@@ -517,6 +519,7 @@ def google_exchange(req: GoogleExchangeRequest, db: Session = Depends(get_db)):
         "access": access,
         "refresh": refresh,
         "user": {
+            "id": user.id,
             "username": user.username,
             "email": user.email,
             "first_name": user.first_name
@@ -879,104 +882,7 @@ def get_chat_messages(
     ]
 
 
-@router.get("/todays_chat/", tags=["Chat"])
-def todays_chat(
-    authorization: str = Header(None),
-    skip: int = 0,
-    limit: int = 50,
-    db: Session = Depends(get_db)
-):
-    """
-    Get today's chats with pagination
-    """
-    # Get current user
-    user = get_current_user(authorization, db)
-    print(f"\n📅 [todays_chat] User {user.username} requesting chats")
-    
-    today = datetime.now(timezone.utc).date()
-    chats = db.query(Chat).filter(
-        Chat.user_id == user.id,
-        Chat.created_at >= datetime.combine(today, datetime.min.time())
-    ).order_by(Chat.created_at.desc()).offset(skip).limit(limit).all()
-    
-    print(f"📊 [todays_chat] Found {len(chats)} chats for today")
-    
-    return [
-        {
-            "id": chat.id,
-            "title": chat.title,
-            "created_at": chat.created_at,
-            "updated_at": chat.updated_at
-        }
-        for chat in chats
-    ]
 
-
-@router.get("/yesterdays_chat/", tags=["Chat"])
-def yesterdays_chat(
-    authorization: str = Header(None),
-    skip: int = 0,
-    limit: int = 50,
-    db: Session = Depends(get_db)
-):
-    """
-    Get yesterday's chats with pagination
-    """
-    # Get current user
-    user = get_current_user(authorization, db)
-    
-    today = datetime.now(timezone.utc).date()
-    yesterday = today - timedelta(days=1)
-    
-    chats = db.query(Chat).filter(
-        Chat.user_id == user.id,
-        Chat.created_at >= datetime.combine(yesterday, datetime.min.time()),
-        Chat.created_at < datetime.combine(today, datetime.min.time())
-    ).order_by(Chat.created_at.desc()).offset(skip).limit(limit).all()
-    
-    return [
-        {
-            "id": chat.id,
-            "title": chat.title,
-            "created_at": chat.created_at,
-            "updated_at": chat.updated_at
-        }
-        for chat in chats
-    ]
-
-
-@router.get("/seven_days_chat/", tags=["Chat"])
-def seven_days_chat(
-    authorization: str = Header(None),
-    skip: int = 0,
-    limit: int = 50,
-    db: Session = Depends(get_db)
-):
-    """
-    Get chats from the last 7 days (excluding today and yesterday) with pagination
-    """
-    # Get current user
-    user = get_current_user(authorization, db)
-    
-    today = datetime.now(timezone.utc).date()
-    yesterday = today - timedelta(days=1)
-    seven_days_ago = today - timedelta(days=7)
-    
-    chats = db.query(Chat).filter(
-        Chat.user_id == user.id,
-        Chat.created_at >= datetime.combine(seven_days_ago, datetime.min.time()),
-        Chat.created_at < datetime.combine(yesterday, datetime.min.time())
-    ).order_by(Chat.created_at.desc()).offset(skip).limit(limit).all()
-    
-    return [
-        {
-            "id": chat.id,
-            "title": chat.title,
-            "created_at": chat.created_at,
-            "updated_at": chat.updated_at
-        }
-        for chat in chats
-    ]
 
 
 @router.delete("/delete_chat/{chat_id}/", tags=["Chat"])
@@ -1320,12 +1226,6 @@ def get_chats_by_user_id(
     Get all Chat records for a specific user in JSON format
     """
     chats = db.query(Chat).filter(Chat.user_id == user_id).all()
-    
-    if not chats:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No chats found for this user"
-        )
     
     return {
         "user_id": user_id,

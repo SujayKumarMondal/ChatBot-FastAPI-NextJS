@@ -122,7 +122,7 @@ export default function Homepage() {
         setIsLoadingMessages(false);
       }
     },
-    enabled: !!chatID && !!getToken(),
+    enabled: !!chatID && !!getToken() && !!chat_uid, // ONLY fetch if chat_uid exists (existing chat)
     staleTime: Infinity, // Don't auto-refetch, only manual refetch
     gcTime: 1000 * 60 * 30, // Keep cache for 30 minutes
     retry: 2, // Retry failed requests twice
