@@ -65,6 +65,7 @@ app.add_middleware(
         "http://127.0.0.1",
         "*"  # Fallback for development
     ],
+)
 # =========================
 # Environment-based configuration
 # =========================
