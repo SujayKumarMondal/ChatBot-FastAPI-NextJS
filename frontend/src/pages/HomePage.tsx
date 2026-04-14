@@ -4,10 +4,10 @@ import ReactMarkdown from "react-markdown";
 import { useNavigate, useParams } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import vs2015 from "react-syntax-highlighter/dist/esm/styles/prism/atom-dark";
-import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import TypingLoader from "@/components/TypingLoader";
 import LoginPrompt from "@/components/LoginPrompt";
+import SpellCheckInput from "@/components/SpellCheckInput";
 import { promptGPT } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
@@ -313,17 +313,17 @@ export default function Homepage() {
               className="flex-1"
               whileFocus="focused"
             >
-              <Textarea
+              <SpellCheckInput
                 placeholder="Ask me anything..."
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => setInput(e)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleSend();
                   }
                 }}
-                className="flex-1 resize-none min-h-[50px] max-h-[150px] rounded-md border border-input bg-muted/40 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground shadow-sm transition"
+                className="flex-1"
               />
             </motion.div>
 
