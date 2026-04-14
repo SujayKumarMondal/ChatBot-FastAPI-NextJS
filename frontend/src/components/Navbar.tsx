@@ -76,25 +76,25 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Notification Bell */}
-          {user && (
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hover:bg-primary/10 hover:text-primary transition-all relative rounded-full"
-                title="Notifications"
-                aria-label="View notifications"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-destructive to-accent text-white text-xs flex items-center justify-center animate-pulse font-semibold">
-                    {unreadNotifications}
-                  </span>
-                )}
-              </Button>
-            </div>
-          )}
+          {/* Notification Bell
+          // {user && (
+          //   <div className="relative">
+          //     <Button
+          //       variant="ghost"
+          //       size="icon"
+          //       className="hover:bg-primary/10 hover:text-primary transition-all relative rounded-full"
+          //       title="Notifications"
+          //       aria-label="View notifications"
+          //     >
+          //       <Bell className="h-5 w-5" />
+          //       {unreadNotifications > 0 && (
+          //         <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-destructive to-accent text-white text-xs flex items-center justify-center animate-pulse font-semibold">
+          //           {unreadNotifications}
+          //         </span>
+          //       )}
+          //     </Button>
+          //   </div>
+          // )} */}
 
           {/* Theme Toggle */}
           <Button
