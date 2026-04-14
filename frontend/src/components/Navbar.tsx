@@ -184,7 +184,7 @@ export default function Navbar() {
           onClick={() => setShowSignOutDialog(false)}
         >
           <div 
-            className="bg-background border border-border rounded-lg shadow-xl p-6 max-w-sm mx-4"
+            className="bg-background border border-border rounded-lg shadow-xl p-6 max-w-sm mx-4 mt-154"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-semibold mb-2">Sign Out?</h2>
