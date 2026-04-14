@@ -230,12 +230,12 @@ export function AppSidebar() {
 
   const renderChatItem = (chat: IChat) => (
     <SidebarMenuItem key={chat.id}>
-      <div className="flex justify-between items-center group">
-        <NavLink to={`chats/${chat.id}`} className="flex-1">
+      <div className="flex justify-between items-center group h-10">
+        <NavLink to={`chats/${chat.id}`} className="flex-1 h-full">
           {({ isActive }) => (
             <SidebarMenuButton
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg transition cursor-pointer text-sm font-medium",
+                "flex items-center gap-2 px-3 py-2 rounded-lg transition cursor-pointer text-sm font-medium h-full w-full",
                 isActive 
                   ? "bg-gradient-to-r from-primary/40 to-accent/40 text-primary border border-primary/40 shadow-md shadow-primary/20" 
                   : "hover:bg-primary/20 hover:border-primary/30 border border-transparent"
@@ -248,7 +248,7 @@ export function AppSidebar() {
             </SidebarMenuButton>
           )}
         </NavLink>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 h-full px-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {/* Delete Button */}
           <button
             onClick={(e) => {
@@ -259,7 +259,7 @@ export function AppSidebar() {
                 chatTitle: chat.title,
               });
             }}
-            className="p-1.5 hover:bg-destructive/30 rounded-lg text-destructive/60 hover:text-destructive transition-all"
+            className="p-1 hover:bg-destructive/30 rounded-lg text-destructive/60 hover:text-destructive transition-all flex items-center justify-center"
             title="Delete chat"
             aria-label="Delete chat"
           >
@@ -272,7 +272,7 @@ export function AppSidebar() {
               e.preventDefault();
               toggleFavorite(chat.id);
             }}
-            className="p-1.5 hover:bg-primary/30 rounded-lg transition-all"
+            className="p-1 hover:bg-primary/30 rounded-lg transition-all flex items-center justify-center"
             title={chat.isFavorite ? "Remove from favorites" : "Add to favorites"}
             aria-label={
               chat.isFavorite ? "Remove from favorites" : "Add to favorites"
@@ -294,8 +294,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="bg-gradient-to-b from-background to-secondary/5 text-foreground border-r border-primary/20">
-      <SidebarContent className="flex flex-col justify-between h-full">
-        <div className="space-y-4">
+      <SidebarContent className="flex flex-col h-full p-0">
+        <div className="space-y-4 overflow-y-auto flex-1 px-0">
           {/* ⏰ IST Clock */}
           <div className="px-4 pt-4 pb-2 text-center">
             <div className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent flex items-center justify-center gap-2 pr-8">
@@ -375,8 +375,8 @@ export function AppSidebar() {
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="px-4 py-3 border-t border-primary/20 bg-gradient-to-t from-primary/5 to-transparent space-y-2">
+        {/* Footer Actions - Sticky to bottom */}
+        <div className="sticky bottom-0 left-0 right-0 px-4 py-3 border-t border-primary/20 bg-gradient-to-t from-primary/5 to-transparent space-y-2 z-10">
           {/* About and Show Archived Side-by-Side */}
           <div className="flex gap-2">
             <Button
