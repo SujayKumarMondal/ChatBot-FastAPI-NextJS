@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 const OAuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signInWithTokens, token } = useAuth();
+  const { signInWithTokens } = useAuth();
   const exchangeAttemptedRef = useRef(false);
 
   useEffect(() => {

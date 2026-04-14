@@ -180,10 +180,10 @@ export default function PrivacyPolicyPage() {
           <p className="leading-relaxed">
             To exercise your privacy rights, request data deletion, or submit a data subject request, contact us at{" "}
             <a
-              href="mailto:support@chatpaat.com"
+              href="mailto:chatpaat.support.10@gmail.com"
               className="text-primary font-medium hover:underline"
             >
-              support@chatpaat.com
+              chatpaat.support.10@gmail.com
             </a>
             . Please include sufficient information to identify your account. We will respond to legitimate requests within 30 days.
           </p>

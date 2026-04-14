@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 
@@ -16,6 +17,44 @@ load_dotenv()
 # Create FastAPI app
 app = FastAPI(title="ChatPaat API", version="1.0.0")
 
+# Custom OpenAPI schema with Bearer token security
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="ChatPaat API",
+        version="1.0.0",
+        description="ChatPaat API Endpoints",
+        routes=app.routes,
+    )
+    openapi_schema["components"]["securitySchemes"] = {
+        "Bearer": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "Enter JWT token (get from /api/login/ endpoint)"
+        }
+    }
+    
+    # Add security requirement to all endpoints except login/register/oauth
+    public_endpoints = ["/api/login/", "/api/register/", "/api/auth/google/exchange/", "/api/refresh-token/"]
+    
+    for path, path_item in openapi_schema.get("paths", {}).items():
+        for operation in path_item.values():
+            if isinstance(operation, dict) and "operationId" in operation:
+                # Add security to all non-public endpoints
+                if not any(path.startswith(pub) for pub in public_endpoints):
+                    operation["security"] = [{"Bearer": []}]
+    
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
 # =========================
 # Environment-based configuration
 # =========================

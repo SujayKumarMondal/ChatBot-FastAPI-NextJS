@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Settings, Bell } from "lucide-react";
+import { Sun, Moon, Settings, Bell, History } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "./ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
@@ -49,25 +51,50 @@ export default function Navbar() {
 
         {/* Right: Controls */}
         <div className="flex items-center gap-2 md:gap-3">
-          {/* Notification Bell */}
+          {/* History Icon */}
           {user && (
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hover:bg-primary/10 hover:text-primary transition-all relative rounded-full"
-                title="Notifications"
-                aria-label="View notifications"
+            <div className="relative group">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Bell className="h-5 w-5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-destructive to-accent text-white text-xs flex items-center justify-center animate-pulse font-semibold">
-                    {unreadNotifications}
-                  </span>
-                )}
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/history")}
+                  className="hover:bg-primary/10 hover:text-primary transition-all rounded-full"
+                  title="Click to check history"
+                  aria-label="View chat history"
+                >
+                  <History className="h-5 w-5" />
+                </Button>
+              </motion.div>
+              {/* Tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-foreground text-background text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 font-medium">
+                Click to check history
+              </div>
             </div>
           )}
+
+          {/* Notification Bell
+          // {user && (
+          //   <div className="relative">
+          //     <Button
+          //       variant="ghost"
+          //       size="icon"
+          //       className="hover:bg-primary/10 hover:text-primary transition-all relative rounded-full"
+          //       title="Notifications"
+          //       aria-label="View notifications"
+          //     >
+          //       <Bell className="h-5 w-5" />
+          //       {unreadNotifications > 0 && (
+          //         <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-destructive to-accent text-white text-xs flex items-center justify-center animate-pulse font-semibold">
+          //           {unreadNotifications}
+          //         </span>
+          //       )}
+          //     </Button>
+          //   </div>
+          // )} */}
 
           {/* Theme Toggle */}
           <Button
@@ -157,7 +184,7 @@ export default function Navbar() {
           onClick={() => setShowSignOutDialog(false)}
         >
           <div 
-            className="bg-background border border-border rounded-lg shadow-xl p-6 max-w-sm mx-4"
+            className="bg-background border border-border rounded-lg shadow-xl p-6 max-w-sm mx-4 mt-154"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-semibold mb-2">Sign Out?</h2>

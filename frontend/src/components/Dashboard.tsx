@@ -8,8 +8,6 @@ interface DashboardStats {
   totalMessages: number;
   avgResponseTime: number;
   streakDays: number;
-  weeklyActivity: { day: string; count: number }[];
-  topicBreakdown: { topic: string; count: number }[];
 }
 
 const containerVariants = {
@@ -33,8 +31,11 @@ const itemVariants = {
 };
 
 const numberVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: { opacity: 1, scale: 1 },
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.5 },
+  },
 };
 
 export default function Dashboard() {
@@ -48,44 +49,86 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    // Simulate loading dashboard stats
-    const mockStats: DashboardStats = {
-      totalChats: 42,
-      totalMessages: 287,
-      avgResponseTime: 1.2,
-      streakDays: 7,
-      weeklyActivity: [
-        { day: "Mon", count: 12 },
-        { day: "Tue", count: 19 },
-        { day: "Wed", count: 15 },
-        { day: "Thu", count: 25 },
-        { day: "Fri", count: 31 },
-        { day: "Sat", count: 18 },
-        { day: "Sun", count: 14 },
-      ],
-      topicBreakdown: [
-        { topic: "Development", count: 85 },
-        { topic: "Design", count: 45 },
-        { topic: "Writing", count: 72 },
-        { topic: "Other", count: 85 },
-      ],
+    // Fetch real chat statistics
+    const fetchStats = async () => {
+      try {
+        const token = sessionStorage.getItem("access_token");
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        // Get all chats (large limit to get everything)
+        const chatsResponse = await fetch(
+          "http://127.0.0.1:7004/api/chats?skip=0&limit=1000",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (chatsResponse.ok) {
+          const chatsData = await chatsResponse.json();
+          const totalChats = chatsData.total || 0;
+
+          // Calculate total messages
+          let totalMessages = 0;
+          if (chatsData.data && Array.isArray(chatsData.data)) {
+            totalMessages = chatsData.data.reduce(
+              (sum: number, chat: any) => sum + (chat.message_count || 0),
+              0
+            );
+          }
+
+          const mockStats: DashboardStats = {
+            totalChats,
+            totalMessages,
+            avgResponseTime: 1.2,
+            streakDays: 7,
+          };
+
+          setStats(mockStats);
+          setLoading(false);
+
+          // Animate counter numbers
+          const interval = setInterval(() => {
+            setDisplayedValues((prev) => ({
+              totalChats: Math.min(prev.totalChats + 2, mockStats.totalChats),
+              totalMessages: Math.min(
+                prev.totalMessages + 5,
+                mockStats.totalMessages
+              ),
+              streakDays: Math.min(prev.streakDays + 1, mockStats.streakDays),
+            }));
+          }, 50);
+
+          return () => clearInterval(interval);
+        } else {
+          // Fallback to mock data if API fails
+          const mockStats: DashboardStats = {
+            totalChats: 0,
+            totalMessages: 0,
+            avgResponseTime: 1.2,
+            streakDays: 0,
+          };
+          setStats(mockStats);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+        // Fallback to empty stats
+        setStats({
+          totalChats: 0,
+          totalMessages: 0,
+          avgResponseTime: 1.2,
+          streakDays: 0,
+        });
+        setLoading(false);
+      }
     };
 
-    setTimeout(() => {
-      setStats(mockStats);
-      setLoading(false);
-
-      // Animate counter numbers
-      const interval = setInterval(() => {
-        setDisplayedValues((prev) => ({
-          totalChats: Math.min(prev.totalChats + 2, mockStats.totalChats),
-          totalMessages: Math.min(prev.totalMessages + 5, mockStats.totalMessages),
-          streakDays: Math.min(prev.streakDays + 1, mockStats.streakDays),
-        }));
-      }, 50);
-
-      return () => clearInterval(interval);
-    }, 500);
+    fetchStats();
   }, [user]);
 
   if (loading) {
@@ -93,7 +136,11 @@ export default function Dashboard() {
   }
 
   if (!stats) {
-    return <div className="p-8 text-center text-muted-foreground">Failed to load dashboard</div>;
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        Failed to load dashboard
+      </div>
+    );
   }
 
   return (
@@ -108,7 +155,9 @@ export default function Dashboard() {
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
           Welcome back, {user?.username}! 👋
         </h1>
-        <p className="text-muted-foreground mt-2 text-lg">Here's your activity overview for today</p>
+        <p className="text-muted-foreground mt-2 text-lg">
+          Here's your activity overview
+        </p>
       </motion.div>
 
       {/* Stats Cards */}
@@ -167,16 +216,32 @@ export default function Dashboard() {
           variants={containerVariants}
         >
           <motion.div variants={itemVariants}>
-            <QuickAction label="New Chat" icon="➕" color="bg-gradient-to-br from-primary/40 to-primary/20" />
+            <QuickAction
+              label="New Chat"
+              icon="➕"
+              color="bg-gradient-to-br from-primary/40 to-primary/20"
+            />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <QuickAction label="View History" icon="📜" color="bg-gradient-to-br from-blue-500/40 to-blue-400/20" />
+            <QuickAction
+              label="View History"
+              icon="📜"
+              color="bg-gradient-to-br from-blue-500/40 to-blue-400/20"
+            />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <QuickAction label="Export Chats" icon="📥" color="bg-gradient-to-br from-green-500/40 to-green-400/20" />
+            <QuickAction
+              label="Export Chats"
+              icon="📥"
+              color="bg-gradient-to-br from-green-500/40 to-green-400/20"
+            />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <QuickAction label="Settings" icon="⚙️" color="bg-gradient-to-br from-purple-500/40 to-purple-400/20" />
+            <QuickAction
+              label="Settings"
+              icon="⚙️"
+              color="bg-gradient-to-br from-purple-500/40 to-purple-400/20"
+            />
           </motion.div>
         </motion.div>
       </motion.div>
