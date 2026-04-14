@@ -657,37 +657,6 @@ def upload_profile_image(
         )
 
 
-@router.post("/api/profile/change-password/", tags=["Profile"])
-def change_password(
-    password_data: ChangePasswordRequest,
-    authorization: str = Header(None),
-    db: Session = Depends(get_db)
-):
-    """
-    Change user's password
-    """
-    user = get_current_user(authorization, db)
-    
-    if not verify_password(password_data.old_password, user.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Old password is incorrect"
-        )
-    
-    if password_data.new_password == password_data.old_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be different from old password"
-        )
-    
-    user.password = hash_password(password_data.new_password)
-    db.commit()
-    
-    return {
-        "message": "Password changed successfully"
-    }
-
-
 @router.delete("/api/profile/", tags=["Profile"])
 def delete_account(
     authorization: str = Header(None),
