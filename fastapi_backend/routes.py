@@ -1421,3 +1421,52 @@ def get_search_history_by_user_id(
     }
 
 
+# ======================= Chat History for Table View =======================
+
+@router.get("/api/chat-history/", tags=["Chat History"])
+def get_chat_history_table(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed chat history for ag-grid table display
+    Returns one row per message with full user and chat details
+    Ordered by timestamp (descending)
+    """
+    user = get_current_user(authorization, db)
+    
+    # Fetch all chats and messages for the current user
+    chats = db.query(Chat).filter(Chat.user_id == user.id).all()
+    
+    chat_history_rows = []
+    
+    for chat in chats:
+        # For each chat, create rows for all messages
+        messages = db.query(ChatMessage).filter(ChatMessage.chat_id == chat.id).order_by(ChatMessage.created_at.desc()).all()
+        
+        for message in messages:
+            chat_history_rows.append({
+                "userId": user.id,
+                "userName": user.username,
+                "userEmail": user.email,
+                "role": user.role or "user",
+                "timestamp": message.created_at.isoformat() if message.created_at else "",
+                "chatId": chat.id,
+                "chatTitle": chat.title or "Untitled",
+                "question": next((m.content for m in messages if m.role == "user"), ""),
+                "response": message.content if message.role == "assistant" else "",
+                "messageRole": message.role,
+                "messageId": message.id
+            })
+    
+    # Sort by timestamp descending
+    chat_history_rows.sort(key=lambda x: x["timestamp"], reverse=True)
+    
+    print(f"[get_chat_history_table] Fetched {len(chat_history_rows)} message rows for user {user.id}")
+    
+    return {
+        "total": len(chat_history_rows),
+        "data": chat_history_rows
+    }
+
+

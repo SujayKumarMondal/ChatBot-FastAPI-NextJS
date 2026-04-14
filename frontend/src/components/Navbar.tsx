@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Settings, Bell } from "lucide-react";
+import { Sun, Moon, Settings, Bell, History } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "./ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
@@ -49,6 +51,31 @@ export default function Navbar() {
 
         {/* Right: Controls */}
         <div className="flex items-center gap-2 md:gap-3">
+          {/* History Icon */}
+          {user && (
+            <div className="relative group">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/history")}
+                  className="hover:bg-primary/10 hover:text-primary transition-all rounded-full"
+                  title="Click to check history"
+                  aria-label="View chat history"
+                >
+                  <History className="h-5 w-5" />
+                </Button>
+              </motion.div>
+              {/* Tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-foreground text-background text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 font-medium">
+                Click to check history
+              </div>
+            </div>
+          )}
+
           {/* Notification Bell */}
           {user && (
             <div className="relative">

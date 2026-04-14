@@ -12,6 +12,7 @@ import TermsPage from "./pages/TermsPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
+import HistoryPage from "./pages/HistoryPage";
 import PageTransition from "./components/PageTransition";
 
 import ForgotPassword from "./pages/ForgotPassword";
@@ -34,6 +35,8 @@ const App = () => {
               {/* Settings & Profile routes */}
               <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
               <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
+              {/* History Page */}
+              <Route path="/history" element={<PageTransition><HistoryPage /></PageTransition>} />
               {/* App layout */}
               <Route path="/" element={<MainLayout />}>
                 <Route index element={<PageTransition><HomePage /></PageTransition>} />

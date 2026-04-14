@@ -30,6 +30,14 @@ const itemVariants = {
   },
 };
 
+const numberVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.5 },
+  },
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);

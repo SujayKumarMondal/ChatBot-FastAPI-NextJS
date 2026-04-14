@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SendHorizonalIcon, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import vs2015 from "react-syntax-highlighter/dist/esm/styles/prism/atom-dark";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +24,6 @@ const WELCOME_MESSAGE: MessageType = {
 };
 
 export default function Homepage() {
-  const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { chat_uid } = useParams();
@@ -86,7 +85,7 @@ export default function Homepage() {
   });
 
   // 🔹 Fetch chat messages for existing chat
-  const { data: chatData, isLoading: isLoadingChatData, refetch: refetchMessages } = useQuery({
+  const { data: chatData, isLoading: isLoadingChatData } = useQuery({
     queryKey: ["chatMessages", chatID],
     queryFn: async () => {
       const token = getToken();
@@ -125,7 +124,7 @@ export default function Homepage() {
     },
     enabled: !!chatID && !!getToken(),
     staleTime: Infinity, // Don't auto-refetch, only manual refetch
-    cacheTime: 1000 * 60 * 30, // Keep cache for 30 minutes
+    gcTime: 1000 * 60 * 30, // Keep cache for 30 minutes
     retry: 2, // Retry failed requests twice
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
