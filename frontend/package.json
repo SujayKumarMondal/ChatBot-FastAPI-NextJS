@@ -16,7 +16,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tailwindcss/vite": "^4.1.11",
-    "@tanstack/react-query": "^5.81.5",
+    "@tanstack/react-query": "^5.99.0",
     "ag-grid-community": "^35.2.1",
     "ag-grid-react": "^35.2.1",
     "axios": "^1.12.2",
