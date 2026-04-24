@@ -211,6 +211,7 @@ export default function SpellCheckInput({
           whiteSpace: "pre-wrap",
           wordWrap: "break-word",
           lineHeight: "1.5",
+          color: "transparent",
           zIndex: 2,
         }}
       >
