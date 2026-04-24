@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (Production-like environment)
+  db:
+    image: postgres:16-alpine
+    container_name: chatpaat-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres  # Change in production!
+      POSTGRES_DB: chatpaat
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chatpaat-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./fastapi_backend
+      dockerfile: Dockerfile
+    container_name: chatpaat-api
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "false"
+      USE_POSTGRES: "true"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: chatpaat
+      DB_SCHEMA: public
+      HOST: 0.0.0.0
+      PORT: 8000
+      SECRET_KEY: dev-secret-key-change-in-production
+      ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      GOOGLE_CLIENT_ID: your_client_id
+      GOOGLE_CLIENT_SECRET: your_client_secret
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "7004:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./fastapi_backend:/app
+    command: uvicorn fastapi_server:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - chatpaat-network
+
+  # Frontend (Vite dev server)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: chatpaat-web
+    environment:
+      VITE_API_URL: http://localhost:7004
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    networks:
+      - chatpaat-network
+
+volumes:
+  pgdata:
+
+networks:
+  chatpaat-network:
+    driver: bridge

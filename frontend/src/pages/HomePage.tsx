@@ -228,7 +228,7 @@ export default function Homepage() {
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {isLoadingMessages && (
             <div className="flex items-center justify-center py-8">
-              <div className="text-muted-foreground">Loading chat history...</div>
+              {/* <div className="text-muted-foreground">Loading chat history...</div> */}
             </div>
           )}
           
