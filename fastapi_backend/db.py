@@ -1,45 +1,71 @@
 import os
 from urllib.parse import quote
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# =========================
 # Database Configuration
-# Default to SQLite for local development
+# =========================
 USE_POSTGRES = os.getenv("USE_POSTGRES", "").lower() == "true"
+
 DB_NAME = os.getenv("DB_NAME", "")
 DB_USER = os.getenv("DB_USER", "")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
+DB_SCHEMA = os.getenv("DB_SCHEMA", "refdata")
 
-# URL-encode the password to handle special characters
-encoded_password = quote(DB_PASSWORD, safe='')
+# Encode password (handles special characters like @, #, etc.)
+encoded_password = quote(DB_PASSWORD, safe="")
 
-# Create connection string
-# Use SQLite by default for easy local development
+# =========================
+# Database URL + Engine
+# =========================
 if USE_POSTGRES and DB_NAME:
-    DATABASE_URL = f"postgresql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DATABASE_URL = (
+        f"postgresql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    )
+
+    print(f"[DATABASE] Using PostgreSQL ({DB_SCHEMA} schema)")
+
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,  # prevents stale connections
+        connect_args={
+            "options": f"-csearch_path={DB_SCHEMA}"  # 👈 key part
+        },
+    )
+
 else:
-    # Default to SQLite for local development
-    sqlite_path = os.path.join(os.path.dirname(__file__), "db.sqlite3")
+    # Fallback to SQLite for local dev
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    sqlite_path = os.path.join(BASE_DIR, "db.sqlite3")
+
     DATABASE_URL = f"sqlite:///{sqlite_path}"
+
     print(f"[DATABASE] Using SQLite: {sqlite_path}")
 
-# Create engine
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+    )
+
+# =========================
+# Session Factory
+# =========================
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
 )
 
-# Create session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
+# =========================
+# Dependency (FastAPI)
+# =========================
 def get_db():
-    """Dependency injection for database sessions"""
     db = SessionLocal()
     try:
         yield db
@@ -47,7 +73,9 @@ def get_db():
         db.close()
 
 
+# =========================
+# Initialize DB (optional)
+# =========================
 def init_db():
-    """Initialize database tables"""
     from models import Base
     Base.metadata.create_all(bind=engine)

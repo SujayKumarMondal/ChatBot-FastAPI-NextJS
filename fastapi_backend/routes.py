@@ -4,10 +4,18 @@ import uuid
 from datetime import datetime, timedelta
 import requests
 import base64
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status, Header, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+import hashlib
+
+# from win32comext import authorization
+from auth import SECRET_KEY
+from datetime import timezone
+import secrets, hashlib
 
 from db import get_db
 from models import CustomUser, Chat, ChatMessage, UserSearchHistory, PasswordResetToken
@@ -15,6 +23,15 @@ from auth import (
     hash_password, verify_password, create_access_token,
     create_refresh_token, verify_token, SECRET_KEY
 )
+
+# Database Configuration (from db.py)
+USE_POSTGRES = os.getenv("USE_POSTGRES", "").lower() == "true"
+DB_NAME = os.getenv("DB_NAME", "")
+DB_USER = os.getenv("DB_USER", "")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+
 # Google OAuth settings
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -51,13 +68,9 @@ def password_reset(req: PasswordResetRequest, db: Session = Depends(get_db)):
     """
     user = db.query(CustomUser).filter(CustomUser.email == req.email).first()
     if user:
-        import secrets, hashlib
-        from auth import SECRET_KEY
-        from datetime import timezone
         token = secrets.token_urlsafe(48)
         token_hash = hashlib.sha256((token + SECRET_KEY).encode()).hexdigest()
         expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
-        # You may need to define PasswordResetToken in your models
         prt = PasswordResetToken(user_id=user.id, token_hash=token_hash, expires_at=expires_at, used=False)
         db.add(prt)
         db.commit()
@@ -80,9 +93,6 @@ def password_reset_confirm(req: PasswordResetConfirm, db: Session = Depends(get_
     - **new_password**: New password to set
     - Returns: Success or error if token is invalid/expired
     """
-    import hashlib
-    from auth import SECRET_KEY
-    from datetime import timezone
     token_hash = hashlib.sha256((req.token + SECRET_KEY).encode()).hexdigest()
     now = datetime.now(timezone.utc)
     prt = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash, PasswordResetToken.used == False, PasswordResetToken.expires_at > now).first()
@@ -176,6 +186,10 @@ class UpdateProfileRequest(BaseModel):
     email: Optional[str] = None
 
 
+class UpdateChatTitleRequest(BaseModel):
+    title: str
+
+
 
 
 # ======================= ChangePasswordRequest Model =======================
@@ -253,15 +267,28 @@ def create_chat_title(user_message: str) -> str:
 # ======================= Default ========================== #
 
 @router.get("/")
-def read_root():
-    """Root endpoint"""
-    return {"message": "Welcome to ChatPaat API"}
+async def read_root():
+    """Serve the documentation homepage"""
+    root_dir = Path(__file__).parent.parent
+    index_path = root_dir / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path, media_type="text/html")
+    return {"message": "ChatPaat Documentation - Visit /docs for API documentation"}
 
 
 @router.get("/health/")
 def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
+    """Health check endpoint with database info"""
+    return {
+        "status": "healthy",
+        "database": {
+            "type": "PostgreSQL" if USE_POSTGRES else "SQLite",
+            "host": DB_HOST if USE_POSTGRES else "local",
+            "port": DB_PORT if USE_POSTGRES else "N/A",
+            "database": DB_NAME if USE_POSTGRES else "db.sqlite3",
+            "user": DB_USER if USE_POSTGRES else "N/A"
+        }
+    }
 
 
 @router.post("/api/store_search/")
@@ -286,7 +313,7 @@ def user_search(
     search_history = UserSearchHistory(
         user_id=user.id,
         search_query=search_data.search_query,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(search_history)
     db.commit()
@@ -338,6 +365,7 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
         "access": access_token,
         "refresh": refresh_token,
         "user": {
+            "id": new_user.id,
             "username": new_user.username,
             "email": new_user.email
         }
@@ -373,6 +401,7 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
         "access": access_token,
         "refresh": refresh_token,
         "user": {
+            "id": user.id,
             "username": user.username,
             "email": user.email
         }
@@ -490,6 +519,7 @@ def google_exchange(req: GoogleExchangeRequest, db: Session = Depends(get_db)):
         "access": access,
         "refresh": refresh,
         "user": {
+            "id": user.id,
             "username": user.username,
             "email": user.email,
             "first_name": user.first_name
@@ -518,63 +548,6 @@ def get_profile(
         "date_joined": user.date_joined
     }
 
-
-@router.post("/api/profile/upload-image/", tags=["Profile"])
-def upload_profile_image(
-    file: UploadFile = File(...),
-    authorization: str = Header(None),
-    db: Session = Depends(get_db)
-):
-    """
-    Upload user's profile image (stored as base64)
-    """
-    user = get_current_user(authorization, db)
-    
-    try:
-        # Read the uploaded file
-        contents = file.file.read()
-        
-        # Validate file size (max 5MB)
-        if len(contents) > 5 * 1024 * 1024:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File size must be less than 5MB"
-            )
-        
-        # Validate file type
-        allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
-        if file.content_type not in allowed_types:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only JPEG, PNG, GIF, and WebP images are allowed"
-            )
-        
-        # Convert to base64
-        image_base64 = base64.b64encode(contents).decode('utf-8')
-        image_data_url = f"data:{file.content_type};base64,{image_base64}"
-        
-        # Save to database
-        # user.image = image_data_url
-        db.commit()
-        db.refresh(user)
-        
-        return {
-            "message": "Profile image uploaded successfully",
-            # "image": user.image,
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                # "image": user.image
-            }
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Error uploading image: {str(e)}"
-        )
 
 @router.put("/api/profile/", tags=["Profile"])
 def update_profile(
@@ -673,6 +646,7 @@ def upload_profile_image(
                 "email": user.email,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "image": user.image,
                 "image": user.image
             }
         }
@@ -681,37 +655,6 @@ def upload_profile_image(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Error uploading image: {str(e)}"
         )
-
-
-@router.post("/api/profile/change-password/", tags=["Profile"])
-def change_password(
-    password_data: ChangePasswordRequest,
-    authorization: str = Header(None),
-    db: Session = Depends(get_db)
-):
-    """
-    Change user's password
-    """
-    user = get_current_user(authorization, db)
-    
-    if not verify_password(password_data.old_password, user.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Old password is incorrect"
-        )
-    
-    if password_data.new_password == password_data.old_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be different from old password"
-        )
-    
-    user.password = hash_password(password_data.new_password)
-    db.commit()
-    
-    return {
-        "message": "Password changed successfully"
-    }
 
 
 @router.delete("/api/profile/", tags=["Profile"])
@@ -756,6 +699,7 @@ def prompt_gpt(
     """
     # Get current user
     user = get_current_user(authorization, db)
+    print(f"\n📨 [prompt_gpt] User: {user.username} (ID: {user.id})")
     
     if not prompt_data.content:
         raise HTTPException(
@@ -765,25 +709,30 @@ def prompt_gpt(
     
     # Get or create chat
     chat_id = prompt_data.chat_id or str(uuid.uuid4())
+    print(f"📋 [prompt_gpt] Chat ID: {chat_id}")
     chat = db.query(Chat).filter(Chat.id == chat_id).first()
     
     if chat:
+        print(f"✅ [prompt_gpt] Chat exists - checking ownership")
         if chat.user_id != user.id:
+            print(f"❌ [prompt_gpt] Unauthorized - Chat owner: {chat.user_id}, User: {user.id}")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Unauthorized access to chat."
             )
     else:
+        print(f"🆕 [prompt_gpt] Creating new chat with user_id={user.id}")
         chat = Chat(
             id=chat_id,
             user_id=user.id,
             title=None,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         db.add(chat)
         db.commit()
         db.refresh(chat)
+        print(f"✅ [prompt_gpt] Chat created: {chat.id} for user {chat.user_id}")
     
     # Create chat title if not exists
     if not chat.title:
@@ -798,15 +747,17 @@ def prompt_gpt(
         chat_id=chat.id,
         role="user",
         content=prompt_data.content,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(user_message)
     db.commit()
+    print(f"💬 [prompt_gpt] User message saved for chat {chat.id}")
     
     # Get chat history (last 20 messages)
     chat_messages = db.query(ChatMessage).filter(
         ChatMessage.chat_id == chat.id
     ).order_by(ChatMessage.created_at).limit(20).all()
+    print(f"📜 [prompt_gpt] Retrieved {len(chat_messages)} messages from chat history")
     
     groq_messages = [{"role": m.role, "content": m.content} for m in chat_messages]
     
@@ -841,10 +792,12 @@ def prompt_gpt(
         chat_id=chat.id,
         role="assistant",
         content=groq_reply,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(assistant_message)
     db.commit()
+    print(f"🤖 [prompt_gpt] Assistant message saved for chat {chat.id}")
+    print(f"✅ [prompt_gpt] Chat {chat.id} complete - returning reply\n")
     
     return {"reply": groq_reply}
 
@@ -860,17 +813,22 @@ def get_chat_messages(
     """
     # Get current user
     user = get_current_user(authorization, db)
+    print(f"\n📖 [get_chat_messages] User {user.username} requesting chat: {chat_id}")
     
     # Get chat
     chat = db.query(Chat).filter(Chat.id == chat_id).first()
     if not chat:
+        print(f"❌ [get_chat_messages] Chat not found: {chat_id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Chat not found"
         )
     
+    print(f"✅ [get_chat_messages] Chat found - Chat owner: {chat.user_id}, Current user: {user.id}")
+    
     # Check authorization
     if chat.user_id != user.id:
+        print(f"❌ [get_chat_messages] Unauthorized - Chat owner: {chat.user_id}, User: {user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Unauthorized access to chat messages."
@@ -881,6 +839,9 @@ def get_chat_messages(
         ChatMessage.chat_id == chat.id
     ).order_by(ChatMessage.created_at).all()
     
+    print(f"📊 [get_chat_messages] Retrieved {len(messages)} messages for chat {chat_id}")
+    print(f"✅ [get_chat_messages] Returning messages\n")
+    
     return [
         {
             "role": msg.role,
@@ -890,95 +851,7 @@ def get_chat_messages(
     ]
 
 
-@router.get("/todays_chat/", tags=["Chat"])
-def todays_chat(
-    authorization: str = Header(None),
-    db: Session = Depends(get_db)
-):
-    """
-    Get today's chats
-    """
-    # Get current user
-    user = get_current_user(authorization, db)
-    
-    today = datetime.utcnow().date()
-    chats = db.query(Chat).filter(
-        Chat.user_id == user.id,
-        Chat.created_at >= datetime.combine(today, datetime.min.time())
-    ).order_by(Chat.created_at.desc()).limit(10).all()
-    
-    return [
-        {
-            "id": chat.id,
-            "title": chat.title,
-            "created_at": chat.created_at,
-            "updated_at": chat.updated_at
-        }
-        for chat in chats
-    ]
 
-
-@router.get("/yesterdays_chat/", tags=["Chat"])
-def yesterdays_chat(
-    authorization: str = Header(None),
-    db: Session = Depends(get_db)
-):
-    """
-    Get yesterday's chats
-    """
-    # Get current user
-    user = get_current_user(authorization, db)
-    
-    today = datetime.utcnow().date()
-    yesterday = today - timedelta(days=1)
-    
-    chats = db.query(Chat).filter(
-        Chat.user_id == user.id,
-        Chat.created_at >= datetime.combine(yesterday, datetime.min.time()),
-        Chat.created_at < datetime.combine(today, datetime.min.time())
-    ).order_by(Chat.created_at.desc()).limit(10).all()
-    
-    return [
-        {
-            "id": chat.id,
-            "title": chat.title,
-            "created_at": chat.created_at,
-            "updated_at": chat.updated_at
-        }
-        for chat in chats
-    ]
-
-
-@router.get("/seven_days_chat/", tags=["Chat"])
-def seven_days_chat(
-    authorization: str = Header(None),
-    db: Session = Depends(get_db)
-):
-    """
-    Get chats from the last 7 days (excluding today and yesterday)
-    """
-    # Get current user
-    user = get_current_user(authorization, db)
-    
-    today = datetime.utcnow().date()
-    yesterday = today - timedelta(days=1)
-    seven_days_ago = today - timedelta(days=7)
-    
-    chats = db.query(Chat).filter(
-        Chat.user_id == user.id,
-        Chat.created_at >= datetime.combine(seven_days_ago, datetime.min.time()),
-        Chat.created_at < datetime.combine(yesterday, datetime.min.time())
-    ).order_by(Chat.created_at.desc()).limit(10).all()
-    
-    return [
-        {
-            "id": chat.id,
-            "title": chat.title,
-            "created_at": chat.created_at,
-            "updated_at": chat.updated_at
-        }
-        for chat in chats
-    ]
 
 
 @router.delete("/delete_chat/{chat_id}/", tags=["Chat"])
@@ -1020,5 +893,449 @@ def delete_chat(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting chat: {str(e)}"
         )
+
+
+# ======================= Additional Chat Management Endpoints =======================
+
+@router.get("/api/chats/", tags=["Chat"])
+def get_all_chats(
+    authorization: str = Header(None),
+    skip: int = 0,
+    limit: int = 50,
+    search: str = "",
+    db: Session = Depends(get_db)
+):
+    """
+    Get all chats for current user with optional search and pagination
+    """
+    user = get_current_user(authorization, db)
+    
+    query = db.query(Chat).filter(Chat.user_id == user.id)
+    
+    if search:
+        query = query.filter(Chat.title.ilike(f"%{search}%"))
+    
+    total = query.count()
+    chats = query.order_by(Chat.updated_at.desc()).offset(skip).limit(limit).all()
+    
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "data": [
+            {
+                "id": chat.id,
+                "title": chat.title,
+                "created_at": chat.created_at,
+                "updated_at": chat.updated_at,
+                "message_count": len(chat.messages) if chat.messages else 0
+            }
+            for chat in chats
+        ]
+    }
+
+
+@router.put("/api/chats/{chat_id}/", tags=["Chat"])
+def update_chat_title(
+    chat_id: str,
+    title_data: UpdateChatTitleRequest,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Update chat title
+    """
+    user = get_current_user(authorization, db)
+    
+    chat = db.query(Chat).filter(
+        Chat.id == chat_id,
+        Chat.user_id == user.id
+    ).first()
+    
+    if not chat:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat not found"
+        )
+    
+    if not title_data.title or not title_data.title.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title cannot be empty"
+        )
+    
+    chat.title = title_data.title.strip()
+    chat.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    
+    return {
+        "message": "Chat title updated successfully",
+        "chat_id": chat.id,
+        "title": chat.title
+    }
+
+
+@router.get("/api/chats/{chat_id}/messages/", tags=["Chat"])
+def get_chat_messages_paginated(
+    chat_id: str,
+    authorization: str = Header(None),
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """
+    Get chat messages with pagination (most recent last)
+    """
+    user = get_current_user(authorization, db)
+    
+    chat = db.query(Chat).filter(
+        Chat.id == chat_id,
+        Chat.user_id == user.id
+    ).first()
+    
+    if not chat:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat not found"
+        )
+    
+    total_messages = db.query(ChatMessage).filter(
+        ChatMessage.chat_id == chat.id
+    ).count()
+    
+    messages = db.query(ChatMessage).filter(
+        ChatMessage.chat_id == chat.id
+    ).order_by(ChatMessage.created_at.asc()).offset(skip).limit(limit).all()
+    
+    return {
+        "total": total_messages,
+        "skip": skip,
+        "limit": limit,
+        "chat_id": chat.id,
+        "data": [
+            {
+                "id": msg.id,
+                "role": msg.role,
+                "content": msg.content,
+                "created_at": msg.created_at
+            }
+            for msg in messages
+        ]
+    }
+
+
+@router.get("/api/export/chats/", tags=["Data Export"])
+def export_all_chats(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Export all user's chats and messages as JSON
+    """
+    user = get_current_user(authorization, db)
+    
+    chats = db.query(Chat).filter(Chat.user_id == user.id).order_by(Chat.created_at.desc()).all()
+    
+    export_data = {
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "date_joined": user.date_joined
+        },
+        "export_date": datetime.now(timezone.utc).isoformat(),
+        "total_chats": len(chats),
+        "chats": [
+            {
+                "id": chat.id,
+                "title": chat.title,
+                "created_at": chat.created_at,
+                "updated_at": chat.updated_at,
+                "messages": [
+                    {
+                        "role": msg.role,
+                        "content": msg.content,
+                        "created_at": msg.created_at
+                    }
+                    for msg in chat.messages
+                ]
+            }
+            for chat in chats
+        ]
+    }
+    
+    return export_data
+
+
+# ======================= Data Export Endpoints =======================
+
+@router.get("/api/data/customuser/", tags=["Data Export"])
+def get_all_custom_users(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all CustomUser records in JSON format (ADMIN ONLY)
+    """
+    user = get_current_user(authorization, db)
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can access this endpoint"
+        )
+    
+    users = db.query(CustomUser).all()
+    
+    return {
+        "count": len(users),
+        "data": [
+            {
+                "id": u.id,
+                "username": u.username,
+                "email": u.email,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "date_joined": u.date_joined,
+            }
+            for u in users
+        ]
+    }
+
+
+@router.get("/api/data/customuser/{user_id}", tags=["Data Export"])
+def get_custom_user_by_id(
+    user_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific CustomUser by ID in JSON format (Own profile or ADMIN)
+    """
+    user = get_current_user(authorization, db)
+    
+    if user.id != user_id and not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized access"
+        )
+    
+    target_user = db.query(CustomUser).filter(CustomUser.id == user_id).first()
+    
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return {
+        "id": target_user.id,
+        "username": target_user.username,
+        "email": target_user.email,
+        "first_name": target_user.first_name,
+        "last_name": target_user.last_name,
+        "date_joined": target_user.date_joined,
+    }
+
+
+@router.get("/api/data/chat/", tags=["Data Export"])
+def get_all_chats(
+    db: Session = Depends(get_db)
+):
+    """
+    Get all Chat records in JSON format (all users' chats)
+    """
+    chats = db.query(Chat).all()
+    
+    return {
+        "count": len(chats),
+        "data": [
+            {
+                "id": chat.id,
+                "user_id": chat.user_id,
+                "title": chat.title,
+                "created_at": chat.created_at,
+                "updated_at": chat.updated_at
+            }
+            for chat in chats
+        ]
+    }
+
+
+@router.get("/api/data/chat/{chat_id}", tags=["Data Export"])
+def get_chat_by_id(
+    chat_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific Chat record by ID in JSON format
+    """
+    chat = db.query(Chat).filter(Chat.id == chat_id).first()
+    
+    if not chat:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat not found"
+        )
+    
+    return {
+        "id": chat.id,
+        "user_id": chat.user_id,
+        "title": chat.title,
+        "created_at": chat.created_at,
+        "updated_at": chat.updated_at
+    }
+
+
+@router.get("/api/data/chat/by-user-id/{user_id}", tags=["Data Export"])
+def get_chats_by_user_id(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all Chat records for a specific user in JSON format
+    """
+    chats = db.query(Chat).filter(Chat.user_id == user_id).all()
+    
+    return {
+        "user_id": user_id,
+        "count": len(chats),
+        "data": [
+            {
+                "id": chat.id,
+                "user_id": chat.user_id,
+                "title": chat.title,
+                "created_at": chat.created_at,
+                "updated_at": chat.updated_at
+            }
+            for chat in chats
+        ]
+    }
+
+
+@router.get("/api/data/usersearchhistory/", tags=["Data Export"])
+def get_all_search_history(
+    db: Session = Depends(get_db)
+):
+    """
+    Get all UserSearchHistory records in JSON format
+    """
+    search_history = db.query(UserSearchHistory).all()
+    
+    return {
+        "count": len(search_history),
+        "data": [
+            {
+                "id": sh.id,
+                "user_id": sh.user_id,
+                "search_query": sh.search_query,
+                "created_at": sh.created_at
+            }
+            for sh in search_history
+        ]
+    }
+
+
+@router.get("/api/data/usersearchhistory/{history_id}", tags=["Data Export"])
+def get_search_history_by_id(
+    history_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific UserSearchHistory record by ID in JSON format
+    """
+    search_history = db.query(UserSearchHistory).filter(UserSearchHistory.id == history_id).first()
+    
+    if not search_history:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Search history record not found"
+        )
+    
+    return {
+        "id": search_history.id,
+        "user_id": search_history.user_id,
+        "search_query": search_history.search_query,
+        "created_at": search_history.created_at
+    }
+
+
+@router.get("/api/data/usersearchhistory/by-user-id/{user_id}", tags=["Data Export"])
+def get_search_history_by_user_id(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all UserSearchHistory records for a specific user in JSON format
+    """
+    search_history = db.query(UserSearchHistory).filter(UserSearchHistory.user_id == user_id).all()
+    
+    if not search_history:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No search history found for this user"
+        )
+    
+    return {
+        "user_id": user_id,
+        "count": len(search_history),
+        "data": [
+            {
+                "id": sh.id,
+                "user_id": sh.user_id,
+                "search_query": sh.search_query,
+                "created_at": sh.created_at
+            }
+            for sh in search_history
+        ]
+    }
+
+
+# ======================= Chat History for Table View =======================
+
+@router.get("/api/chat-history/", tags=["Chat History"])
+def get_chat_history_table(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed chat history for ag-grid table display
+    Returns one row per message with full user and chat details
+    Ordered by timestamp (descending)
+    """
+    user = get_current_user(authorization, db)
+    
+    # Fetch all chats and messages for the current user
+    chats = db.query(Chat).filter(Chat.user_id == user.id).all()
+    
+    chat_history_rows = []
+    
+    for chat in chats:
+        # For each chat, create rows for all messages
+        messages = db.query(ChatMessage).filter(ChatMessage.chat_id == chat.id).order_by(ChatMessage.created_at.desc()).all()
+        
+        for message in messages:
+            chat_history_rows.append({
+                "userId": user.id,
+                "userName": user.username,
+                "userEmail": user.email,
+                "role": user.role or "user",
+                "timestamp": message.created_at.isoformat() if message.created_at else "",
+                "chatId": chat.id,
+                "chatTitle": chat.title or "Untitled",
+                "question": next((m.content for m in messages if m.role == "user"), ""),
+                "response": message.content if message.role == "assistant" else "",
+                "messageRole": message.role,
+                "messageId": message.id
+            })
+    
+    # Sort by timestamp descending
+    chat_history_rows.sort(key=lambda x: x["timestamp"], reverse=True)
+    
+    print(f"[get_chat_history_table] Fetched {len(chat_history_rows)} message rows for user {user.id}")
+    
+    return {
+        "total": len(chat_history_rows),
+        "data": chat_history_rows
+    }
 
 

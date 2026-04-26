@@ -8,6 +8,7 @@ import {
 import { getProfileImageByEmail } from "@/lib/imageStorage";
 
 interface User {
+  id: number;
   username: string;
   email: string;
   image?: string;
@@ -39,10 +40,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Restore user on refresh
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    const savedToken = localStorage.getItem("access_token");
+    const savedUser = sessionStorage.getItem("user");
+    const savedToken = sessionStorage.getItem("access_token");
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      console.log("🔄 Restoring user from sessionStorage:", parsedUser);
+      setUser(parsedUser);
     }
     if (savedToken) {
       setToken(savedToken);
@@ -50,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false); // Auth restoration complete
   }, []);
 
-  // 🔹 Sign In (JWT login with Django backend)
+  // 🔹 Sign In (JWT login with FastAPI backend)
   const signIn = async (email: string, password: string) => {
   try {
     const response = await fetch("http://127.0.0.1:7004/api/login/", {
@@ -65,20 +68,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const data = await response.json();
-    localStorage.setItem("access_token", data.access);
-    localStorage.setItem("refresh_token", data.refresh);
+    console.log("🔐 Login response received:", data);
+    
+    sessionStorage.setItem("access_token", data.access);
+    sessionStorage.setItem("refresh_token", data.refresh);
     setToken(data.access);
 
     // Try to get stored image from localStorage, fallback to dicebear
     const storedImage = getProfileImageByEmail(email);
     const userProfile: User = {
+      id: data.user.id,
       username: data.user.username,
       email: data.user.email,
       image: storedImage || `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.email}`,
     };
 
+    console.log("👤 Setting user profile:", userProfile);
     setUser(userProfile);
-    localStorage.setItem("user", JSON.stringify(userProfile));
+    sessionStorage.setItem("user", JSON.stringify(userProfile));
     setRefreshTrigger(prev => prev + 1); // Trigger refetch in sidebar
   } catch (err: any) {
     throw new Error(err.message || "Login failed");
@@ -86,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 
-  // 🔹 Register (calls Django backend)
+  // 🔹 Register (calls FastAPI backend)
   const register = async (username: string, email: string, password: string) => {
     try {
       const response = await fetch("http://127.0.0.1:7004/api/register/", {
@@ -103,19 +110,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await response.json();
 
       // Save tokens from register response
-      localStorage.setItem("access_token", data.access);
-      localStorage.setItem("refresh_token", data.refresh);
+      sessionStorage.setItem("access_token", data.access);
+      sessionStorage.setItem("refresh_token", data.refresh);
       setToken(data.access);
 
       // Save user profile from register response
       const userProfile: User = {
+        id: data.user.id,
         username: data.user.username,
         email: data.user.email,
         image: `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.email}`,
       };
 
       setUser(userProfile);
-      localStorage.setItem("user", JSON.stringify(userProfile));
+      sessionStorage.setItem("user", JSON.stringify(userProfile));
       setRefreshTrigger(prev => prev + 1); // Trigger refetch in sidebar
     } catch (err: any) {
       throw new Error(err.message || "Registration failed");
@@ -126,9 +134,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("refresh_token");
     setRefreshTrigger(prev => prev + 1);
   };
 
@@ -139,26 +147,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 🔹 Sign In With Tokens (used by OAuth callback)
   const signInWithTokens = (access: string, refresh: string, userProfile: User) => {
-    localStorage.setItem("access_token", access);
-    localStorage.setItem("refresh_token", refresh);
-    setToken(access);
+    // Store tokens immediately
+    sessionStorage.setItem("access_token", access);
+    sessionStorage.setItem("refresh_token", refresh);
     
-    // Try to get stored image from localStorage for this user
+    // Update state - store immediately in sessionStorage first to ensure persistence
     const storedImage = getProfileImageByEmail(userProfile.email);
     const profileWithStoredImage = {
       ...userProfile,
       image: storedImage || userProfile.image,
     };
     
+    // Update all state synchronously
+    setToken(access);
     setUser(profileWithStoredImage);
-    localStorage.setItem("user", JSON.stringify(profileWithStoredImage));
+    sessionStorage.setItem("user", JSON.stringify(profileWithStoredImage));
     setRefreshTrigger(prev => prev + 1);
   };
 
   // 🔹 Store User Search
   const storeUserSearch = async (searchQuery: string) => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = sessionStorage.getItem("access_token");
       if (!token) throw new Error("User is not authenticated");
 
       const response = await fetch("http://127.0.0.1:7004/api/store_search/", {
@@ -184,7 +194,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       const updatedUser = { ...user, ...updates };
       setUser(updatedUser);
-      localStorage.setItem("user", JSON.stringify(updatedUser));
+      sessionStorage.setItem("user", JSON.stringify(updatedUser));
       setRefreshTrigger(prev => prev + 1);
     }
   };

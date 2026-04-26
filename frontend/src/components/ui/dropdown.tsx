@@ -113,9 +113,9 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
           return React.cloneElement(child, {
             // Keep original onClick and also close menu
             onClick: () => {
-              child.props.onClick?.();
+              (child.props as any).onClick?.();
             },
-          });
+          } as any);
         }
         return child;
       })}
