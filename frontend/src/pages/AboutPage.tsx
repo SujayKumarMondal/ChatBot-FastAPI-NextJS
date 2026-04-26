@@ -1,24 +1,65 @@
-import { Zap, Sparkles, ShieldAlert } from "lucide-react";
+import { Zap, Sparkles, ShieldAlert, Copy, Check, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export const AboutPage = () => {
+  const [copied, setCopied] = useState(false);
+  const supportEmail = "chatpaat.support.10@gmail.com";
+
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText(supportEmail);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleOpenMail = () => {
+    window.location.href = `mailto:${supportEmail}`;
+  };
+
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <motion.div
-        className="flex items-center gap-4"
+        className="flex items-center gap-4 justify-between"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <img
-          src="/brand_logo.png"
-          alt="ChatPaat Logo"
-          className="h-14 w-14 hover:scale-110 transition-transform"
-        />
-        <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-          ChatPaat
-        </h1>
+        <div className="flex items-center gap-4">
+          <img
+            src="/brand_logo.png"
+            alt="ChatPaat Logo"
+            className="h-14 w-14 hover:scale-110 transition-transform"
+          />
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+              ChatPaat
+            </h1>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleOpenMail}
+                className="flex items-center gap-1 text-sm text-primary hover:underline hover:text-primary/80 transition font-medium"
+                title="Click to send email"
+              >
+                <Mail size={16} />
+                {supportEmail}
+              </button>
+              <motion.button
+                onClick={handleCopyEmail}
+                className="p-1.5 rounded-md hover:bg-muted transition"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                title="Copy email to clipboard"
+              >
+                {copied ? (
+                  <Check size={16} className="text-green-500" />
+                ) : (
+                  <Copy size={16} className="text-muted-foreground hover:text-foreground" />
+                )}
+              </motion.button>
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       {/* Main Grid */}
@@ -70,25 +111,25 @@ export const AboutPage = () => {
           </h2>
 
           <div className="space-y-3">
-            <div className="text-xs">
+            <div className="text-sm">
               <p className="font-semibold text-secondary mb-1">Frontend</p>
               <p className="text-muted-foreground">React 18 + TypeScript, Vite, Tailwind CSS</p>
             </div>
-            <div className="text-xs">
+            <div className="text-sm">
               <p className="font-semibold text-secondary mb-1">Backend</p>
               <p className="text-muted-foreground">FastAPI, Python 3.x, JWT + OAuth 2.0</p>
             </div>
-            <div className="text-xs">
+            <div className="text-sm">
               <p className="font-semibold text-secondary mb-1">AI Engine</p>
               <p className="text-muted-foreground">Groq LLaMA 3.1-8b-instant model</p>
             </div>
-            <div className="text-xs">
+            <div className="text-sm">
               <p className="font-semibold text-secondary mb-1">Database</p>
               <p className="text-muted-foreground">SQLite (dev) / PostgreSQL (production)</p>
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground mt-4">
+          <p className="text-sm text-muted-foreground mt-4">
             Built for scalability, security, and seamless AI interactions.
           </p>
         </motion.div>
@@ -125,7 +166,7 @@ export const AboutPage = () => {
             Architecture Highlights
           </h2>
 
-          <div className="space-y-2 text-xs">
+          <div className="space-y-2 text-sm">
             <p><span className="font-semibold text-blue-400">🎯 Scalable Design:</span> <span className="text-muted-foreground">Microservice-ready with clear API boundaries</span></p>
             <p><span className="font-semibold text-purple-400">🔒 Production-Ready:</span> <span className="text-muted-foreground">Error handling, validation, CORS, and security hardened</span></p>
             <p><span className="font-semibold text-blue-400">⚙️ Modern Stack:</span> <span className="text-muted-foreground">Latest frameworks ensuring long-term maintainability</span></p>
