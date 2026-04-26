@@ -18,10 +18,10 @@ interface MessageType {
   content: string;
 }
 
-const WELCOME_MESSAGE: MessageType = {
+const getWelcomeMessage = (first_name?: string, username?: string): MessageType => ({
   role: "assistant",
-  content: "Welcome! I'm here to assist you.",
-};
+  content: `Welcome${first_name ? ` ${first_name}` : username ? ` ${username}` : ""}! I'm here to assist you.`,
+});
 
 export default function Homepage() {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ export default function Homepage() {
   const [input, setInput] = useState("");
   const [chatID, setChatID] = useState("");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-  const [messages, setMessages] = useState<MessageType[]>([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<MessageType[]>([getWelcomeMessage(user?.first_name || user?.username)]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasLoadedChatRef = useRef<{ [key: string]: boolean }>({});
@@ -164,7 +164,7 @@ export default function Homepage() {
       }
     } else {
       // New chat (no chat_uid in URL) - show welcome message
-      setMessages([WELCOME_MESSAGE]);
+      setMessages([getWelcomeMessage(user?.first_name || user?.username)]);
       console.log(`🆕 New chat created: ${chatID}`);
     }
   }, [chatID, chatData, isLoadingChatData, chat_uid]);
@@ -189,8 +189,9 @@ export default function Homepage() {
 
     // Add user message to UI immediately
     const userMessage: MessageType = { role: "user", content: input };
+    const welcomeMsg = getWelcomeMessage(user?.first_name || user?.username);
     setMessages((prev) =>
-      prev.filter((m) => m.content !== WELCOME_MESSAGE.content).concat([userMessage])
+      prev.filter((m) => m.content !== welcomeMsg.content).concat([userMessage])
     );
 
     const messageContent = input;
@@ -228,7 +229,7 @@ export default function Homepage() {
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {isLoadingMessages && (
             <div className="flex items-center justify-center py-8">
-              <div className="text-muted-foreground">Loading chat history...</div>
+              {/* <div className="text-muted-foreground">Loading chat history...</div> */}
             </div>
           )}
           

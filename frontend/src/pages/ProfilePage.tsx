@@ -596,9 +596,12 @@ export default function ProfilePage() {
 
               <p className="text-sm text-muted-foreground">
                 If you're having issues with ChatPaat, please{" "}
-                <a href="/about" className="text-primary hover:underline">
+                <button
+                  onClick={() => navigate("/about")}
+                  className="text-primary hover:underline font-medium cursor-pointer"
+                >
                   contact us
-                </a>{" "}
+                </button>{" "}
                 first before deleting your account.
               </p>
 
