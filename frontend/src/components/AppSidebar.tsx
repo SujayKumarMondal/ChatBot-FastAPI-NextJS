@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/sidebar";
 
 // import { Badge } from "@/components/ui/badge";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -51,6 +51,7 @@ export function AppSidebar() {
   const [allChats, setAllChats] = useState<IChat[]>([]);
   const { user, isLoading, refreshTrigger, token } = useAuth();
   const { addToast } = useToast();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const isMountedRef = useRef(true);
@@ -213,6 +214,18 @@ export function AppSidebar() {
     return cleanTitle;
   };
 
+  const handleNewChat = () => {
+    if (!user) {
+      addToast({
+        message: "Please Sign In to chat with me! Have a good day!",
+        type: "info",
+        duration: 3000,
+      });
+      return;
+    }
+    navigate("/chats/new");
+  };
+
   const favorites = allChats.filter((c) => c.isFavorite);
   const filteredChats = filterChats(allChats);
   
@@ -308,13 +321,11 @@ export function AppSidebar() {
           <div className="px-4">
             <Button
               variant="default"
+              onClick={handleNewChat}
               className="w-full justify-start cursor-pointer gap-2 bg-gradient-to-r from-primary to-accent hover:shadow-xl hover:shadow-primary/40 transition-all text-white font-semibold"
-              asChild
             >
-              <Link to="/chats/new">
-                <MessageSquarePlus className="w-4 h-4" />
-                New Chat
-              </Link>
+              <MessageSquarePlus className="w-4 h-4" />
+              New Chat
             </Button>
           </div>
 
