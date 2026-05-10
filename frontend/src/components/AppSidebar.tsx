@@ -266,8 +266,8 @@ export function AppSidebar() {
 
   const renderChatItem = (chat: IChat) => (
     <SidebarMenuItem key={chat.id}>
-      <div className="flex justify-between items-center group h-10">
-        <NavLink to={`chats/${chat.id}`} className="flex-1 h-full">
+      <div className="flex justify-between items-center group h-10 w-full">
+        <NavLink to={`chats/${chat.id}`} className="flex-1 h-full min-w-0">
           {({ isActive }) => (
             <SidebarMenuButton
               className={cn(
@@ -284,7 +284,7 @@ export function AppSidebar() {
             </SidebarMenuButton>
           )}
         </NavLink>
-        <div className="flex items-center gap-1 h-full px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-center gap-0.5 h-full px-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
           {/* Delete Button */}
           <button
             onClick={(e) => {
@@ -295,7 +295,7 @@ export function AppSidebar() {
                 chatTitle: chat.title,
               });
             }}
-            className="p-1 hover:bg-destructive/30 rounded-lg text-destructive/60 hover:text-destructive transition-all flex items-center justify-center"
+            className="p-1.5 hover:bg-destructive/30 rounded-lg text-destructive/60 hover:text-destructive transition-all flex items-center justify-center min-w-6 h-6"
             title="Delete chat"
             aria-label="Delete chat"
           >
@@ -308,7 +308,7 @@ export function AppSidebar() {
               e.preventDefault();
               toggleFavorite(chat.id);
             }}
-            className="p-1 hover:bg-primary/30 rounded-lg transition-all flex items-center justify-center"
+            className="p-1.5 hover:bg-primary/30 rounded-lg transition-all flex items-center justify-center min-w-6 h-6"
             title={chat.isFavorite ? "Remove from favorites" : "Add to favorites"}
             aria-label={
               chat.isFavorite ? "Remove from favorites" : "Add to favorites"
