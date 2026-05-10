@@ -11,6 +11,7 @@ import {
   Github,
   Linkedin,
   Globe,
+  RotateCcw,
 } from "lucide-react";
 
 import {
@@ -56,6 +57,7 @@ export function AppSidebar() {
   const [showArchived, setShowArchived] = useState(false);
   const isMountedRef = useRef(true);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
     chatId: string | null;
@@ -144,6 +146,27 @@ export function AppSidebar() {
       isMountedRef.current = false;
     };
   }, []);
+
+  const handleRefreshChats = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchChatsData();
+      // addToast({
+      //   type: "success",
+      //   message: "Chats refreshed successfully",
+      //   duration: 1500,
+      // });
+    } catch (error) {
+      console.error("Error refreshing chats:", error);
+      addToast({
+        type: "error",
+        message: "Failed to refresh chats",
+        duration: 3500,
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const toggleFavorite = (chatId: string) => {
     const updatedChats = allChats.map((chat) =>
@@ -340,6 +363,15 @@ export function AppSidebar() {
                 className="pl-9 h-10 text-sm rounded-lg border-primary/30"
                 aria-label="Search chats"
               />
+              <button
+                onClick={handleRefreshChats}
+                disabled={isRefreshing}
+                className="absolute right-3 top-3 text-muted-foreground hover:text-primary transitions-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                title="Refresh chats"
+                aria-label="Refresh chats"
+              >
+                <RotateCcw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+              </button>
             </div>
           </div>
 
