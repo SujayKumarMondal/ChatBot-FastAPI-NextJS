@@ -7,6 +7,9 @@ import {
 } from "react";
 import { getProfileImageByEmail } from "@/lib/imageStorage";
 
+// ✅ FIXED: Use environment variable for API URL
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 interface User {
   id: number;
   username: string;
@@ -56,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 🔹 Sign In (JWT login with FastAPI backend)
   const signIn = async (email: string, password: string) => {
   try {
-    const response = await fetch("http://127.0.0.1:7004/api/login/", {
+    const response = await fetch(`${API_BASE_URL}/api/login/`, {  // ✅ FIXED: Use env variable
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -96,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 🔹 Register (calls FastAPI backend)
   const register = async (username: string, email: string, password: string) => {
     try {
-      const response = await fetch("http://127.0.0.1:7004/api/register/", {
+      const response = await fetch(`${API_BASE_URL}/api/register/`, {  // ✅ FIXED: Use env variable
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
