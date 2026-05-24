@@ -11,6 +11,7 @@ import {
   Github,
   Linkedin,
   Globe,
+  RotateCcw,
 } from "lucide-react";
 
 import {
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 
 // import { Badge } from "@/components/ui/badge";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -51,10 +52,12 @@ export function AppSidebar() {
   const [allChats, setAllChats] = useState<IChat[]>([]);
   const { user, isLoading, refreshTrigger, token } = useAuth();
   const { addToast } = useToast();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const isMountedRef = useRef(true);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
     chatId: string | null;
@@ -144,6 +147,27 @@ export function AppSidebar() {
     };
   }, []);
 
+  const handleRefreshChats = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchChatsData();
+      // addToast({
+      //   type: "success",
+      //   message: "Chats refreshed successfully",
+      //   duration: 1500,
+      // });
+    } catch (error) {
+      console.error("Error refreshing chats:", error);
+      addToast({
+        type: "error",
+        message: "Failed to refresh chats",
+        duration: 3500,
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const toggleFavorite = (chatId: string) => {
     const updatedChats = allChats.map((chat) =>
       chat.id === chatId
@@ -213,6 +237,18 @@ export function AppSidebar() {
     return cleanTitle;
   };
 
+  const handleNewChat = () => {
+    if (!user) {
+      addToast({
+        message: "Please Sign In to chat with me! Have a good day!",
+        type: "info",
+        duration: 3000,
+      });
+      return;
+    }
+    navigate("/chats/new");
+  };
+
   const favorites = allChats.filter((c) => c.isFavorite);
   const filteredChats = filterChats(allChats);
   
@@ -230,8 +266,8 @@ export function AppSidebar() {
 
   const renderChatItem = (chat: IChat) => (
     <SidebarMenuItem key={chat.id}>
-      <div className="flex justify-between items-center group h-10">
-        <NavLink to={`chats/${chat.id}`} className="flex-1 h-full">
+      <div className="flex justify-between items-center group h-10 w-full">
+        <NavLink to={`chats/${chat.id}`} className="flex-1 h-full min-w-0">
           {({ isActive }) => (
             <SidebarMenuButton
               className={cn(
@@ -248,7 +284,7 @@ export function AppSidebar() {
             </SidebarMenuButton>
           )}
         </NavLink>
-        <div className="flex items-center gap-1 h-full px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-center gap-0.5 h-full px-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
           {/* Delete Button */}
           <button
             onClick={(e) => {
@@ -259,7 +295,7 @@ export function AppSidebar() {
                 chatTitle: chat.title,
               });
             }}
-            className="p-1 hover:bg-destructive/30 rounded-lg text-destructive/60 hover:text-destructive transition-all flex items-center justify-center"
+            className="p-1.5 hover:bg-destructive/30 rounded-lg text-destructive/60 hover:text-destructive transition-all flex items-center justify-center min-w-6 h-6"
             title="Delete chat"
             aria-label="Delete chat"
           >
@@ -272,7 +308,7 @@ export function AppSidebar() {
               e.preventDefault();
               toggleFavorite(chat.id);
             }}
-            className="p-1 hover:bg-primary/30 rounded-lg transition-all flex items-center justify-center"
+            className="p-1.5 hover:bg-primary/30 rounded-lg transition-all flex items-center justify-center min-w-6 h-6"
             title={chat.isFavorite ? "Remove from favorites" : "Add to favorites"}
             aria-label={
               chat.isFavorite ? "Remove from favorites" : "Add to favorites"
@@ -308,13 +344,11 @@ export function AppSidebar() {
           <div className="px-4">
             <Button
               variant="default"
+              onClick={handleNewChat}
               className="w-full justify-start cursor-pointer gap-2 bg-gradient-to-r from-primary to-accent hover:shadow-xl hover:shadow-primary/40 transition-all text-white font-semibold"
-              asChild
             >
-              <Link to="/chats/new">
-                <MessageSquarePlus className="w-4 h-4" />
-                New Chat
-              </Link>
+              <MessageSquarePlus className="w-4 h-4" />
+              New Chat
             </Button>
           </div>
 
@@ -329,6 +363,15 @@ export function AppSidebar() {
                 className="pl-9 h-10 text-sm rounded-lg border-primary/30"
                 aria-label="Search chats"
               />
+              <button
+                onClick={handleRefreshChats}
+                disabled={isRefreshing}
+                className="absolute right-3 top-3 text-muted-foreground hover:text-primary transitions-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                title="Refresh chats"
+                aria-label="Refresh chats"
+              >
+                <RotateCcw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+              </button>
             </div>
           </div>
 

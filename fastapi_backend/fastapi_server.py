@@ -63,7 +63,6 @@ app.add_middleware(
         "http://localhost:7004",
         "http://localhost",
         "http://127.0.0.1",
-        "*"  # Fallback for development
     ],
 )
 # =========================
