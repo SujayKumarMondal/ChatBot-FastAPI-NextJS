@@ -5,10 +5,10 @@ from datetime import datetime, timedelta
 import requests
 import base64
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, logger, status, Header, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, logger, status, Header, UploadFile, File, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 import hashlib
 
@@ -1093,7 +1093,7 @@ def get_chat_messages_paginated(
 
 @router.get("/api/chats/search-messages/", tags=["Chat"])
 def search_messages(
-    query: str = Field(..., min_length=1, max_length=200),
+    query: str = Query(..., min_length=1, max_length=200),
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
