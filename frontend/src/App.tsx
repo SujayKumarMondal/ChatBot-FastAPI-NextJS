@@ -6,6 +6,7 @@ import OAuthCallback from "./pages/OAuthCallback";
 import { AboutPage } from "./pages/AboutPage";
 import RegisterPage from "./pages/RegisterPage";
 import { AuthProvider } from "./context/AuthContext";
+import { SessionTimeoutProvider } from "./context/SessionTimeoutContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
 import TermsPage from "./pages/TermsPage";
@@ -14,6 +15,7 @@ import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import HistoryPage from "./pages/HistoryPage";
 import PageTransition from "./components/PageTransition";
+import SessionWarningModal from "./components/SessionWarningModal";
 
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -23,7 +25,8 @@ const App = () => {
     <ThemeProvider>
       <ToastProvider>
         <AuthProvider>
-          <BrowserRouter>
+          <SessionTimeoutProvider>
+            <BrowserRouter>
             <Routes>
               {/* Auth routes */}
               <Route path="/signin" element={<PageTransition><SignInPage /></PageTransition>} />
@@ -46,7 +49,9 @@ const App = () => {
                 <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
               </Route>
             </Routes>
+            <SessionWarningModal />
           </BrowserRouter>
+          </SessionTimeoutProvider>
         </AuthProvider>
       </ToastProvider>
     </ThemeProvider>

@@ -24,7 +24,7 @@ export default function ResetPassword() {
     if (password.length < 8) return setError("Password must be at least 8 characters");
     if (password !== confirm) return setError("Passwords do not match");
     try {
-      const res = await fetch("http://127.0.0.1:7004/api/auth/password-reset/confirm/", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/password-reset/confirm/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password: password }),
