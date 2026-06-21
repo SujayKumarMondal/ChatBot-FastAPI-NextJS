@@ -7,6 +7,9 @@ import {
 } from "react";
 import { getProfileImageByEmail } from "@/lib/imageStorage";
 
+// ✅ FIXED: Use environment variable for API URL
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 interface User {
   id: number;
   username: string;

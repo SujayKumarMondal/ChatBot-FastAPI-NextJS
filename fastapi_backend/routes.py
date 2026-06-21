@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import requests
 import base64
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, status, Header, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, logger, status, Header, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -527,6 +527,71 @@ def google_exchange(req: GoogleExchangeRequest, db: Session = Depends(get_db)):
     }
 
 
+# ======================= Token Refresh & Logout Endpoints =======================
+
+@router.post("/api/refresh-token/", tags=["Authentication"])
+def refresh_token(authorization: str = Header(None), db: Session = Depends(get_db)):
+    """
+    Refresh access token using refresh token
+    
+    - **authorization**: Bearer refresh token from header
+    - Returns: New access and refresh tokens
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header"
+        )
+    
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+    
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token"
+        )
+    
+    # Verify user still exists
+    user = db.query(CustomUser).filter(CustomUser.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    
+    # Generate new tokens
+    new_access_token = create_access_token({"sub": str(user.id)})
+    new_refresh_token = create_refresh_token({"sub": str(user.id)})
+    
+    logger.info(f"✅ Tokens refreshed for user {user.id}")
+    
+    return {
+        "access": new_access_token,
+        "refresh": new_refresh_token,
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
+        }
+    }
+
+
+@router.post("/api/logout/", tags=["Authentication"])
+def logout(authorization: str = Header(None), db: Session = Depends(get_db)):
+    """
+    Logout endpoint - frontend should delete local tokens
+    
+    - **authorization**: Bearer token from header
+    - Returns: Logout confirmation
+    """
+    user = get_current_user(authorization, db)
+    logger.info(f"✅ User {user.id} logged out")
+    
+    # In future, store revoked tokens in Redis/cache for token blacklisting
+    return {"detail": "Logged out successfully"}
+
+
 # ======================= User Profile Endpoints =======================
 
 @router.get("/api/profile/", tags=["Profile"])
@@ -1024,6 +1089,54 @@ def get_chat_messages_paginated(
     }
 
 
+# ======================= Message Search Endpoints =======================
+
+@router.get("/api/chats/search-messages/", tags=["Chat"])
+def search_messages(
+    query: str = Field(..., min_length=1, max_length=200),
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Search user's messages across all chats
+    
+    - **query**: Search query string
+    - **authorization**: Bearer token
+    - Returns: List of matching messages with context
+    """
+    user = get_current_user(authorization, db)
+    
+    if not query.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Search query cannot be empty"
+        )
+    
+    # Search messages across all user's chats
+    results = db.query(ChatMessage).join(Chat).filter(
+        Chat.user_id == user.id,
+        ChatMessage.content.ilike(f"%{query}%")
+    ).order_by(ChatMessage.created_at.desc()).limit(100).all()
+    
+    logger.info(f"✅ Message search completed for user {user.id}: found {len(results)} results")
+    
+    return {
+        "query": query,
+        "count": len(results),
+        "results": [
+            {
+                "message_id": msg.id,
+                "chat_id": msg.chat_id,
+                "chat_title": msg.chat.title or "Untitled",
+                "role": msg.role,
+                "content": msg.content,
+                "created_at": msg.created_at.isoformat() if msg.created_at else ""
+            }
+            for msg in results
+        ]
+    }
+
+
 @router.get("/api/export/chats/", tags=["Data Export"])
 def export_all_chats(
     authorization: str = Header(None),
@@ -1339,3 +1452,73 @@ def get_chat_history_table(
     }
 
 
+# ======================= OPTIONAL/FUTURE FEATURES =======================
+# These endpoints are stubs for future implementation
+
+@router.post("/api/auth/2fa/enable/", tags=["Authentication"], deprecated=True)
+def enable_2fa(authorization: str = Header(None), db: Session = Depends(get_db)):
+    """
+    🚧 FUTURE FEATURE: Enable Two-Factor Authentication
+    
+    Generates a 2FA secret and returns a QR code for setup.
+    Requires: pip install pyotp qrcode
+    
+    - **authorization**: Bearer token
+    - Returns: Secret and QR code image
+    """
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="2FA support coming soon. To enable: pip install pyotp qrcode"
+    )
+
+
+@router.post("/api/chats/{chat_id}/export/pdf/", tags=["Data Export"], deprecated=True)
+def export_chat_as_pdf(
+    chat_id: str,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    🚧 FUTURE FEATURE: Export Chat as PDF
+    
+    Exports a conversation to PDF format for archival or sharing.
+    Requires: pip install reportlab
+    
+    - **chat_id**: Chat ID to export
+    - **authorization**: Bearer token
+    - Returns: PDF file
+    """
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="PDF export coming soon. To enable: pip install reportlab"
+    )
+
+
+@router.get("/api/docs/message-encryption/", tags=["Documentation"], deprecated=True)
+def message_encryption_docs():
+    """
+    🚧 FUTURE FEATURE: Message Encryption at Rest
+    
+    Messages can be encrypted using cryptography.fernet for enhanced privacy.
+    Requires: pip install cryptography
+    
+    Implementation note:
+    - Add 'content_encrypted' column to ChatMessage model
+    - Store encryption key securely (AWS KMS, HashiCorp Vault)
+    - Decrypt on demand for user viewing
+    
+    This trades performance for privacy - use only if required by regulations.
+    """
+    return {
+        "feature": "Message Encryption",
+        "status": "future",
+        "description": "End-to-end message encryption at rest",
+        "requires": ["cryptography"],
+        "implementation_notes": [
+            "Add content_encrypted column to ChatMessage",
+            "Use Fernet symmetric encryption",
+            "Store key in secure vault (KMS/Vault)",
+            "Decrypt on-demand for display",
+            "Trade-off: Performance vs Privacy"
+        ]
+    }

@@ -19,3 +19,12 @@ bcrypt==4.1.1
 argon2-cffi==23.1.0
 psycopg2-binary==2.9.9
 sendgrid==6.11.0
+# ✅ ADDED: Future features support
+python-json-logger==2.0.7  # Structured logging
+# Optional: For 2FA support
+# pyotp==2.9.0
+# qrcode==7.4.2
+# Optional: For PDF export
+# reportlab==4.0.7
+# Optional: For message encryption
+# cryptography is already installed above

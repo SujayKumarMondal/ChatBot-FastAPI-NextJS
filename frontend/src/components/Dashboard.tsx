@@ -3,6 +3,9 @@ import { MessageSquare, Clock, Zap, TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
 
+// ✅ FIXED: Use environment variable for API URL
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 interface DashboardStats {
   totalChats: number;
   totalMessages: number;
