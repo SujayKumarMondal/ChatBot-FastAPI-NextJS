@@ -60,7 +60,7 @@ export default function Dashboard() {
 
         // Get all chats (large limit to get everything)
         const chatsResponse = await fetch(
-          "http://127.0.0.1:7004/api/chats?skip=0&limit=1000",
+          `${import.meta.env.VITE_API_URL}/api/chats?skip=0&limit=1000`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

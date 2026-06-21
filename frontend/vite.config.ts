@@ -14,7 +14,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL || 'http://127.0.0.1:7004',
+        target: process.env.VITE_API_URL,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
@@ -27,6 +27,6 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
   },
   define: {
-    'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://127.0.0.1:7004'),
+    'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
   }
 })
