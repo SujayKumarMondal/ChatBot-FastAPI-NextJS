@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
 
 // ✅ FIXED: Use environment variable for API URL
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 interface DashboardStats {
   totalChats: number;
@@ -63,7 +63,7 @@ export default function Dashboard() {
 
         // Get all chats (large limit to get everything)
         const chatsResponse = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/chats?skip=0&limit=1000`,
+          `${API_BASE_URL}/api/chats?skip=0&limit=1000`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

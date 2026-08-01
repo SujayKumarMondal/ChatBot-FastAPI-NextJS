@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
+import { getApiBaseUrl } from "./config";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:7004";
+const BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: BASE_URL,

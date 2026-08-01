@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Settings, Bell, History } from "lucide-react";
+import { Sun, Moon, Settings, History } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "./ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
@@ -13,7 +13,6 @@ export default function Navbar() {
   const { user, signOut } = useAuth();
   const { currentTheme, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
-  const [unreadNotifications] = useState(0);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
   const isDark = currentTheme === "dark" || currentTheme !== "light";

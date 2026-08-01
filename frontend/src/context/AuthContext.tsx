@@ -6,9 +6,9 @@ import {
   ReactNode,
 } from "react";
 import { getProfileImageByEmail } from "@/lib/imageStorage";
+import { getApiBaseUrl } from "@/lib/config";
 
-// ✅ FIXED: Use environment variable for API URL
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = getApiBaseUrl();
 
 interface User {
   id: number;
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 🔹 Sign In (JWT login with FastAPI backend)
   const signIn = async (email: string, password: string) => {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/login/`, {
+    const response = await fetch(`${API_BASE_URL}/api/login/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 🔹 Register (calls FastAPI backend)
   const register = async (username: string, email: string, password: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/register/`, {
+      const response = await fetch(`${API_BASE_URL}/api/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
@@ -174,7 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const token = sessionStorage.getItem("access_token");
       if (!token) throw new Error("User is not authenticated");
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/store_search/`, {
+      const response = await fetch(`${API_BASE_URL}/api/store_search/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

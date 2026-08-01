@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getApiBaseUrl } from "@/lib/config";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -13,7 +14,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setError("");
     try {
-      const res = await fetch("http://127.0.0.1:7004/api/auth/password-reset/", {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/password-reset/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

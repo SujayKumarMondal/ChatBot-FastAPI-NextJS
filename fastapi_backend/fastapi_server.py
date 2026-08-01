@@ -51,20 +51,6 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:7004",
-        "http://localhost:7004",
-        "http://localhost",
-        "http://127.0.0.1",
-    ],
-)
 # =========================
 # Environment-based configuration
 # =========================
@@ -72,22 +58,22 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 DEBUG = ENVIRONMENT == "development"
 
 # Get allowed origins from environment or use defaults
+DEFAULT_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:7004",
+    "http://localhost:7004",
+]
+
 if ENVIRONMENT == "production":
-    # Production: use only specified domains
-    ALLOWED_ORIGINS = os.getenv(
+    ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv(
         "ALLOWED_ORIGINS",
-        "https://chatpaat.render.com"
-    ).split(",")
+        "https://chatpaat.vercel.app,https://chatpaat-api.render.com"
+    ).split(",") if origin.strip()]
 else:
-    # Development: allow localhost variants
-    ALLOWED_ORIGINS = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:7004",
-        "http://localhost:7004",
-    ]
+    ALLOWED_ORIGINS = DEFAULT_ORIGINS
 
 # CORS middleware - secure configuration
 app.add_middleware(
@@ -101,6 +87,11 @@ app.add_middleware(
 
 # Include API routes
 app.include_router(router)
+
+
+@app.on_event("startup")
+async def startup_event():
+    init_db()
 
 
 # =========================
