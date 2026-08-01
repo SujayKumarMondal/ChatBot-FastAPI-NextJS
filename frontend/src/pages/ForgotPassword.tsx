@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { getApiBaseUrl } from "@/lib/config";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { getApiBaseUrl } from "../lib/config";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");

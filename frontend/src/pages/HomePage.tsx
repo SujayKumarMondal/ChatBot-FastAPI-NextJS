@@ -5,12 +5,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import vs2015 from "react-syntax-highlighter/dist/esm/styles/prism/atom-dark";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import TypingLoader from "@/components/TypingLoader";
-import LoginPrompt from "@/components/LoginPrompt";
-import SpellCheckInput from "@/components/SpellCheckInput";
-import { promptGPT } from "@/lib/api";
-import { useAuth } from "@/context/AuthContext";
-import { getApiBaseUrl } from "@/lib/config";
+import TypingLoader from "../components/TypingLoader";
+import LoginPrompt from "../components/LoginPrompt";
+import SpellCheckInput from "../components/SpellCheckInput";
+import { promptGPT } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { getApiBaseUrl } from "../lib/config";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 

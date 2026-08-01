@@ -5,8 +5,8 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { getProfileImageByEmail } from "@/lib/imageStorage";
-import { getApiBaseUrl } from "@/lib/config";
+import { getProfileImageByEmail } from "../lib/imageStorage";
+import { getApiBaseUrl } from "../lib/config";
 
 const API_BASE_URL = getApiBaseUrl();
 

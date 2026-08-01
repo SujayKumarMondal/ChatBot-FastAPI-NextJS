@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/context/ToastContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import { ArrowLeft, User, Lock, Trash2, Upload } from "lucide-react";
 import {
   getUserProfile,
@@ -11,8 +11,8 @@ import {
   uploadProfileImage,
   changePassword,
   deleteAccount,
-} from "@/lib/api";
-import { storeProfileImage } from "@/lib/imageStorage";
+} from "../lib/api";
+import { storeProfileImage } from "../lib/imageStorage";
 
 interface ProfileData {
   username: string;
