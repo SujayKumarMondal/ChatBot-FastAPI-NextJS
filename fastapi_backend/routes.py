@@ -42,8 +42,24 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 # Groq API settings
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_API_URL = os.getenv("GROQ_API_URL")
+DEFAULT_GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+
+def get_groq_config() -> tuple[str, str]:
+    """Resolve Groq credentials from environment variables with safe defaults."""
+    load_dotenv(BACKEND_DIR / ".env", override=False)
+
+    groq_api_key = (os.getenv("GROQ_API_KEY") or "").strip()
+    groq_api_url = (os.getenv("GROQ_API_URL") or DEFAULT_GROQ_API_URL).strip()
+
+    if not groq_api_key:
+        raise RuntimeError("GROQ_API_KEY is not configured.")
+
+    if not groq_api_url.startswith(("http://", "https://")):
+        groq_api_url = DEFAULT_GROQ_API_URL
+
+    return groq_api_key, groq_api_url
+
 from email_utils import send_email
 
 # ======================= Router =======================
@@ -240,7 +256,8 @@ def get_current_user(token: str, db: Session) -> CustomUser:
 def create_chat_title(user_message: str) -> str:
     """Create a short title for the chat using Groq"""
     try:
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        groq_api_key, groq_api_url = get_groq_config()
+        headers = {"Authorization": f"Bearer {groq_api_key}"}
         payload = {
             "model": "llama-3.1-8b-instant",
             "messages": [
@@ -256,7 +273,7 @@ def create_chat_title(user_message: str) -> str:
             "max_tokens": 16,
             "temperature": 0.2,
         }
-        response = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=30)
+        response = requests.post(groq_api_url, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         data = response.json()
         title = data["choices"][0]["message"]["content"].strip()
@@ -836,20 +853,26 @@ def prompt_gpt(
     
     # Call Groq API
     try:
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        groq_api_key, groq_api_url = get_groq_config()
+        headers = {"Authorization": f"Bearer {groq_api_key}"}
         payload = {
             "model": "llama-3.1-8b-instant",
             "messages": groq_messages,
             "max_tokens": 1024,
             "temperature": 0.6,
         }
-        response = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=60)
+        response = requests.post(groq_api_url, headers=headers, json=payload, timeout=60)
         response.raise_for_status()
         data = response.json()
         groq_reply = data["choices"][0]["message"]["content"]
         
         if not groq_reply:
             raise RuntimeError("Groq returned no text.")
+    except RuntimeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Groq configuration error: {str(e)}"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
