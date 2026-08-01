@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { AlertCircle, CheckCircle, Info, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -62,14 +63,16 @@ function ToastContainer({
   onRemove: (id: string) => void;
 }) {
   return (
-    <div className="fixed bottom-6 right-6 z-50 space-y-3 pointer-events-none">
-      {toasts.map((toast) => (
-        <ToastItem
-          key={toast.id}
-          toast={toast}
-          onRemove={() => onRemove(toast.id)}
-        />
-      ))}
+    <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none overflow-hidden">
+      <AnimatePresence mode="wait">
+        {toasts.map((toast) => (
+          <ToastItem
+            key={toast.id}
+            toast={toast}
+            onRemove={() => onRemove(toast.id)}
+          />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
@@ -81,18 +84,15 @@ function ToastItem({
   toast: Toast;
   onRemove: () => void;
 }) {
-  const [isExiting, setIsExiting] = useState(false);
-
   const handleClose = () => {
-    setIsExiting(true);
-    setTimeout(onRemove, 200);
+    onRemove();
   };
 
   const colors = {
-    success: "bg-green-500/90 text-white",
-    error: "bg-red-500/90 text-white",
-    info: "bg-blue-500/90 text-white",
-    warning: "bg-yellow-500/90 text-white",
+    success: "bg-gradient-to-r from-green-500 to-green-600 text-white",
+    error: "bg-gradient-to-r from-red-500 to-red-600 text-white",
+    info: "bg-gradient-to-r from-blue-500 to-blue-600 text-white",
+    warning: "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white",
   };
 
   const icons = {
@@ -103,20 +103,32 @@ function ToastItem({
   };
 
   return (
-    <div
-      className={`${colors[toast.type]} rounded-lg p-4 shadow-lg flex items-center gap-3 pointer-events-auto animate-slideInRight transition-all ${
-        isExiting ? "opacity-0 translate-x-full" : "opacity-100 translate-x-0"
-      }`}
+    <motion.div
+      layout
+      initial={{ x: "-100%", opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: "100%", opacity: 0 }}
+      transition={{
+        duration: 0.5,
+        ease: "easeInOut",
+      }}
+      className={`${colors[toast.type]} shadow-2xl shadow-black/40 flex items-center gap-3 pointer-events-auto p-4 mx-auto w-full px-8 py-4 rounded-b-2xl backdrop-blur-md border-b border-white/20`}
     >
-      {icons[toast.type]}
-      <span className="flex-1 text-sm font-medium">{toast.message}</span>
+      <motion.div
+        animate={{ scale: [1, 1.15, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="flex-shrink-0"
+      >
+        {icons[toast.type]}
+      </motion.div>
+      <span className="flex-1 text-sm font-semibold">{toast.message}</span>
       <button
         onClick={handleClose}
-        className="p-1 hover:bg-white/20 rounded transition-colors flex-shrink-0"
+        className="p-2 hover:bg-white/20 rounded-lg transition-all flex-shrink-0 hover:scale-110"
         aria-label="Close notification"
       >
         <X className="h-4 w-4" />
       </button>
-    </div>
+    </motion.div>
   );
 }

@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
+import { getApiBaseUrl } from "./config";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:7004";
+const BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -49,45 +50,14 @@ export async function getChatMessages(chatId: string, token: string) {
   }
 }
 
-// 🔹 Today's chats
-export async function getTodaysChats(token: string) {
+// 🔹 Get all chats for a user
+export async function getChatsByUserId(userId: number) {
   try {
-    const response = await api.get("/todays_chat/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
+    const response = await api.get(`/api/data/chat/by-user-id/${userId}`);
+    return response.data.data || [];
   } catch (err: unknown) {
-    handleError(err);
-  }
-}
-
-// 🔹 Yesterday's chats
-export async function getYesterdaysChats(token: string) {
-  try {
-    const response = await api.get("/yesterdays_chat/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
-  } catch (err: unknown) {
-    handleError(err);
-  }
-}
-
-// 🔹 Last 7 days chats
-export async function getSevenDaysChats(token: string) {
-  try {
-    const response = await api.get("/seven_days_chat/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
-  } catch (err: unknown) {
-    handleError(err);
+    console.error("Error fetching chats:", err);
+    return [];
   }
 }
 
@@ -100,6 +70,156 @@ export async function deleteChat(chatId: string, token: string) {
       },
     });
     return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+// 🔹 Get all chats with pagination
+export async function getAllChats(
+  token: string,
+  skip: number = 0,
+  limit: number = 50,
+  search: string = ""
+) {
+  try {
+    const response = await api.get("/api/chats/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: { skip, limit, search },
+    });
+    return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+// 🔹 Update chat title
+export async function updateChatTitle(
+  chatId: string,
+  title: string,
+  token: string
+) {
+  try {
+    const response = await api.put(`/api/chats/${chatId}/`, { title }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+// 🔹 Get chat messages with pagination
+export async function getChatMessagesPaginated(
+  chatId: string,
+  token: string,
+  skip: number = 0,
+  limit: number = 100
+) {
+  try {
+    const response = await api.get(`/api/chats/${chatId}/messages/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: { skip, limit },
+    });
+    return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+// 🔹 Export all chats
+export async function exportAllChats(token: string) {
+  try {
+    const response = await api.get("/api/export/chats/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+// 🔹 Get chat history for table view (combines profile + export data)
+export async function getChatHistoryTable(token: string) {
+  try {
+    // Fetch user profile
+    const profileResponse = await api.get("/api/profile/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const userProfile = profileResponse.data;
+
+    // Fetch all chats and messages
+    const chatsResponse = await api.get("/api/export/chats/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const exportData = chatsResponse.data;
+
+    // Transform data into table rows
+    const chatHistoryRows: any[] = [];
+
+    if (exportData.chats && Array.isArray(exportData.chats)) {
+      for (const chat of exportData.chats) {
+        if (chat.messages && Array.isArray(chat.messages)) {
+          // Process messages: create rows only for assistant responses, paired with user questions
+          for (let i = 0; i < chat.messages.length; i++) {
+            const message = chat.messages[i];
+            
+            // Only create rows for assistant messages (responses)
+            if (message.role === "assistant" && message.content && message.content.trim()) {
+              // Find the immediately preceding user message
+              let userQuestion = "";
+              for (let j = i - 1; j >= 0; j--) {
+                if (chat.messages[j].role === "user" && chat.messages[j].content) {
+                  userQuestion = chat.messages[j].content;
+                  break;
+                }
+              }
+
+              // Only add if we have a question
+              if (userQuestion) {
+                chatHistoryRows.push({
+                  userId: userProfile.id,
+                  userName: userProfile.username,
+                  userEmail: userProfile.email,
+                  role: userProfile.role || "user",
+                  timestamp: message.created_at,
+                  chatId: chat.id,
+                  chatTitle: chat.title || "Untitled",
+                  question: userQuestion,
+                  response: message.content,
+                  messageRole: message.role,
+                  messageId: `${chat.id}-${message.created_at}`,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Sort by timestamp descending
+    chatHistoryRows.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    console.log(`📊 [getChatHistoryTable] Transformed ${chatHistoryRows.length} rows from export data`);
+
+    return {
+      total: chatHistoryRows.length,
+      data: chatHistoryRows,
+    };
   } catch (err: unknown) {
     handleError(err);
   }

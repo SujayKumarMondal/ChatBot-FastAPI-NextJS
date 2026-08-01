@@ -10,13 +10,14 @@ load_dotenv()
 # Database Configuration
 # =========================
 USE_POSTGRES = os.getenv("USE_POSTGRES", "").lower() == "true"
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 DB_NAME = os.getenv("DB_NAME", "")
 DB_USER = os.getenv("DB_USER", "")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
-DB_SCHEMA = os.getenv("DB_SCHEMA", "refdata")
+DB_SCHEMA = os.getenv("DB_SCHEMA", "public")
 
 # Encode password (handles special characters like @, #, etc.)
 encoded_password = quote(DB_PASSWORD, safe="")
@@ -24,7 +25,13 @@ encoded_password = quote(DB_PASSWORD, safe="")
 # =========================
 # Database URL + Engine
 # =========================
-if USE_POSTGRES and DB_NAME:
+if DATABASE_URL:
+    print("[DATABASE] Using DATABASE_URL from environment")
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+    )
+elif USE_POSTGRES and DB_NAME:
     DATABASE_URL = (
         f"postgresql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
@@ -33,10 +40,7 @@ if USE_POSTGRES and DB_NAME:
 
     engine = create_engine(
         DATABASE_URL,
-        pool_pre_ping=True,  # prevents stale connections
-        connect_args={
-            "options": f"-csearch_path={DB_SCHEMA}"  # 👈 key part
-        },
+        pool_pre_ping=True,
     )
 
 else:
@@ -78,4 +82,10 @@ def get_db():
 # =========================
 def init_db():
     from models import Base
-    Base.metadata.create_all(bind=engine)
+    print(f"[DATABASE] Creating/checking tables in schema: {DB_SCHEMA}")
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("[DATABASE] Tables created or verified successfully")
+    except Exception as exc:
+        print(f"[DATABASE] Table initialization failed: {exc}")
+        raise

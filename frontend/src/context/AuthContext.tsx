@@ -6,8 +6,12 @@ import {
   ReactNode,
 } from "react";
 import { getProfileImageByEmail } from "@/lib/imageStorage";
+import { getApiBaseUrl } from "@/lib/config";
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface User {
+  id: number;
   username: string;
   email: string;
   image?: string;
@@ -42,7 +46,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const savedUser = sessionStorage.getItem("user");
     const savedToken = sessionStorage.getItem("access_token");
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      console.log("🔄 Restoring user from sessionStorage:", parsedUser);
+      setUser(parsedUser);
     }
     if (savedToken) {
       setToken(savedToken);
@@ -53,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 🔹 Sign In (JWT login with FastAPI backend)
   const signIn = async (email: string, password: string) => {
   try {
-    const response = await fetch("http://127.0.0.1:7004/api/login/", {
+    const response = await fetch(`${API_BASE_URL}/api/login/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -65,6 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const data = await response.json();
+    console.log("🔐 Login response received:", data);
+    
     sessionStorage.setItem("access_token", data.access);
     sessionStorage.setItem("refresh_token", data.refresh);
     setToken(data.access);
@@ -72,11 +80,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Try to get stored image from localStorage, fallback to dicebear
     const storedImage = getProfileImageByEmail(email);
     const userProfile: User = {
+      id: data.user.id,
       username: data.user.username,
       email: data.user.email,
       image: storedImage || `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.email}`,
     };
 
+    console.log("👤 Setting user profile:", userProfile);
     setUser(userProfile);
     sessionStorage.setItem("user", JSON.stringify(userProfile));
     setRefreshTrigger(prev => prev + 1); // Trigger refetch in sidebar
@@ -89,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 🔹 Register (calls FastAPI backend)
   const register = async (username: string, email: string, password: string) => {
     try {
-      const response = await fetch("http://127.0.0.1:7004/api/register/", {
+      const response = await fetch(`${API_BASE_URL}/api/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
@@ -109,6 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Save user profile from register response
       const userProfile: User = {
+        id: data.user.id,
         username: data.user.username,
         email: data.user.email,
         image: `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.email}`,
@@ -163,7 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const token = sessionStorage.getItem("access_token");
       if (!token) throw new Error("User is not authenticated");
 
-      const response = await fetch("http://127.0.0.1:7004/api/store_search/", {
+      const response = await fetch(`${API_BASE_URL}/api/store_search/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

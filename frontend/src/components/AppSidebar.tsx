@@ -11,6 +11,7 @@ import {
   Github,
   Linkedin,
   Globe,
+  RotateCcw,
 } from "lucide-react";
 
 import {
@@ -25,14 +26,12 @@ import {
 } from "@/components/ui/sidebar";
 
 // import { Badge } from "@/components/ui/badge";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
-  getSevenDaysChats,
-  getTodaysChats,
-  getYesterdaysChats,
+  getChatsByUserId,
   deleteChat,
 } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -42,21 +41,23 @@ import { cn } from "@/lib/utils";
 interface IChat {
   id: string;
   title: string;
-  created: string;
+  created_at: string;
+  updated_at?: string;
   isFavorite?: boolean;
   folder?: string;
   isArchived?: boolean;
 }
 
 export function AppSidebar() {
-  const [recentChats, setRecentChats] = useState<IChat[]>([]);
-  const [yesterdaysChats, setYesterdaysChat] = useState<IChat[]>([]);
-  const [sevenDaysChats, setSevenDaysChat] = useState<IChat[]>([]);
-  const { refreshTrigger, token } = useAuth();
+  const [allChats, setAllChats] = useState<IChat[]>([]);
+  const { user, isLoading, refreshTrigger, token } = useAuth();
   const { addToast } = useToast();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const isMountedRef = useRef(true);
+  const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
     chatId: string | null;
@@ -87,61 +88,47 @@ export function AppSidebar() {
   }, []);
 
   const fetchChatsData = useCallback(async () => {
-    // Try to get token from context first, then fallback to sessionStorage
-    let tokenToUse = token || sessionStorage.getItem("access_token");
-    
-    // If still no token, wait a bit and try again (handles race condition)
-    if (!tokenToUse) {
-      console.log("No token available yet, waiting...");
-      await new Promise(resolve => setTimeout(resolve, 100));
-      tokenToUse = token || sessionStorage.getItem("access_token");
+    // Wait for auth to complete loading
+    if (isLoading) {
+      console.log("⏳ Authentication still loading, waiting...");
+      return;
     }
-    
-    if (!tokenToUse) {
-      console.log("No token available (context or sessionStorage), clearing chats");
-      if (isMountedRef.current) {
-        setRecentChats([]);
-        setYesterdaysChat([]);
-        setSevenDaysChat([]);
-      }
+
+    // Check if we have a user with an ID
+    if (!user || !user.id) {
+      console.log("❌ No user available, clearing chats", { user, userId: user?.id });
+      setAllChats([]);
+      setIsLoadingChats(false);
       return;
     }
     
+    setIsLoadingChats(true);
     try {
-      console.log("Fetching chats with token:", tokenToUse.substring(0, 10) + "...");
-      const [today, yesterday, seven] = await Promise.all([
-        getTodaysChats(tokenToUse),
-        getYesterdaysChats(tokenToUse),
-        getSevenDaysChats(tokenToUse),
-      ]);
+      console.log("🔄 Fetching chats for user:", user.id);
+      const chatsData = await getChatsByUserId(user.id);
+      console.log("📥 Received chats data from API:", chatsData, "Type:", typeof chatsData, "Is Array:", Array.isArray(chatsData), "Length:", chatsData?.length);
       
-      // Only update state if component is still mounted
-      if (isMountedRef.current) {
-        setRecentChats(today || []);
-        setYesterdaysChat(yesterday || []);
-        setSevenDaysChat(seven || []);
-        console.log("✅ Chats loaded successfully", { 
-          todayCount: today?.length || 0,
-          yesterdayCount: yesterday?.length || 0,
-          sevenDaysCount: seven?.length || 0,
-          totalChats: (today?.length || 0) + (yesterday?.length || 0) + (seven?.length || 0)
-        });
-      }
+      // Sort chats by created_at in descending order (latest first)
+      const sortedChats = (chatsData || []).sort((a: IChat, b: IChat) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      console.log("📊 Sorted chats:", sortedChats.length, "items");
+      setAllChats(sortedChats);
+      console.log("✅ State updated with chats");
     } catch (error) {
       console.error("❌ Error fetching chats:", error);
-      if (isMountedRef.current) {
-        setRecentChats([]);
-        setYesterdaysChat([]);
-        setSevenDaysChat([]);
-      }
+      setAllChats([]);
+    } finally {
+      setIsLoadingChats(false);
     }
-  }, [token]);
+  }, [user, isLoading]);
 
-  // Fetch chats when token changes (e.g., after OAuth sign-in) or when refreshTrigger changes
+  // Fetch chats when user changes or when refreshTrigger changes
   useEffect(() => {
-    console.log("AppSidebar useEffect triggered - token:", !!token, "sessionStorageToken:", !!sessionStorage.getItem("access_token"), "refreshTrigger:", refreshTrigger);
+    console.log("🔔 AppSidebar useEffect triggered - isLoading:", isLoading, "user:", user?.id, "refreshTrigger:", refreshTrigger);
     fetchChatsData();
-  }, [token, refreshTrigger, fetchChatsData]);
+  }, [user?.id, isLoading, refreshTrigger]); // Only depend on user.id, not the whole user object or fetchChatsData
 
   // Also refetch when window regains focus
   useEffect(() => {
@@ -160,17 +147,34 @@ export function AppSidebar() {
     };
   }, []);
 
-  const toggleFavorite = (chatId: string) => {
-    const updateChats = (chats: IChat[]) =>
-      chats.map((chat) =>
-        chat.id === chatId
-          ? { ...chat, isFavorite: !chat.isFavorite }
-          : chat
-      );
+  const handleRefreshChats = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchChatsData();
+      // addToast({
+      //   type: "success",
+      //   message: "Chats refreshed successfully",
+      //   duration: 1500,
+      // });
+    } catch (error) {
+      console.error("Error refreshing chats:", error);
+      addToast({
+        type: "error",
+        message: "Failed to refresh chats",
+        duration: 3500,
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
-    setRecentChats(updateChats(recentChats));
-    setYesterdaysChat(updateChats(yesterdaysChats));
-    setSevenDaysChat(updateChats(sevenDaysChats));
+  const toggleFavorite = (chatId: string) => {
+    const updatedChats = allChats.map((chat) =>
+      chat.id === chatId
+        ? { ...chat, isFavorite: !chat.isFavorite }
+        : chat
+    );
+    setAllChats(updatedChats);
   };
 
   const handleDeleteChat = async (chatId: string) => {
@@ -187,10 +191,8 @@ export function AppSidebar() {
       // Call API to delete chat from database
       await deleteChat(chatId, token);
 
-      // Remove from UI state across all arrays
-      setRecentChats(recentChats.filter((c) => c.id !== chatId));
-      setYesterdaysChat(yesterdaysChats.filter((c) => c.id !== chatId));
-      setSevenDaysChat(sevenDaysChats.filter((c) => c.id !== chatId));
+      // Remove from UI state
+      setAllChats(allChats.filter((c) => c.id !== chatId));
 
       // Show success toast
       addToast({
@@ -213,9 +215,12 @@ export function AppSidebar() {
 
   const filterChats = (chats: IChat[]) => {
     return chats.filter((chat) => {
-      const matchesSearch = chat.title
+      // Handle null/undefined title
+      const chatTitle = chat.title || "";
+      const matchesSearch = chatTitle
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
+      // Show non-archived chats by default, or archived if toggled
       const matchesArchived = showArchived ? chat.isArchived : !chat.isArchived;
       return matchesSearch && matchesArchived;
     });
@@ -232,20 +237,41 @@ export function AppSidebar() {
     return cleanTitle;
   };
 
-  const allChats = [...recentChats, ...yesterdaysChats, ...sevenDaysChats];
+  const handleNewChat = () => {
+    if (!user) {
+      addToast({
+        message: "Please Sign In to chat with me! Have a good day!",
+        type: "info",
+        duration: 3000,
+      });
+      return;
+    }
+    navigate("/chats/new");
+  };
+
   const favorites = allChats.filter((c) => c.isFavorite);
-  const filteredRecent = filterChats(recentChats);
-  const filteredYesterday = filterChats(yesterdaysChats);
-  const filteredSevenDays = filterChats(sevenDaysChats);
+  const filteredChats = filterChats(allChats);
+  
+  // Log state changes (not on every render)
+  useEffect(() => {
+    console.log("🎯 Sidebar state CHANGED:", {
+      allChatsCount: allChats.length,
+      favoritesCount: favorites.length,
+      filteredChatsCount: filteredChats.length,
+      searchQuery,
+      showArchived,
+      allChats: allChats.map(c => ({ id: c.id, title: c.title, isArchived: c.isArchived, isFavorite: c.isFavorite }))
+    });
+  }, [allChats, favorites.length, filteredChats.length, searchQuery, showArchived]);
 
   const renderChatItem = (chat: IChat) => (
     <SidebarMenuItem key={chat.id}>
-      <div className="flex justify-between items-center group">
-        <NavLink to={`chats/${chat.id}`} className="flex-1">
+      <div className="flex justify-between items-center group h-10 w-full">
+        <NavLink to={`chats/${chat.id}`} className="flex-1 h-full min-w-0">
           {({ isActive }) => (
             <SidebarMenuButton
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg transition cursor-pointer text-sm font-medium",
+                "flex items-center gap-2 px-3 py-2 rounded-lg transition cursor-pointer text-sm font-medium h-full w-full",
                 isActive 
                   ? "bg-gradient-to-r from-primary/40 to-accent/40 text-primary border border-primary/40 shadow-md shadow-primary/20" 
                   : "hover:bg-primary/20 hover:border-primary/30 border border-transparent"
@@ -258,7 +284,7 @@ export function AppSidebar() {
             </SidebarMenuButton>
           )}
         </NavLink>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-center gap-0.5 h-full px-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
           {/* Delete Button */}
           <button
             onClick={(e) => {
@@ -269,7 +295,7 @@ export function AppSidebar() {
                 chatTitle: chat.title,
               });
             }}
-            className="p-1.5 hover:bg-destructive/30 rounded-lg text-destructive/60 hover:text-destructive transition-all"
+            className="p-1.5 hover:bg-destructive/30 rounded-lg text-destructive/60 hover:text-destructive transition-all flex items-center justify-center min-w-6 h-6"
             title="Delete chat"
             aria-label="Delete chat"
           >
@@ -282,7 +308,7 @@ export function AppSidebar() {
               e.preventDefault();
               toggleFavorite(chat.id);
             }}
-            className="p-1.5 hover:bg-primary/30 rounded-lg transition-all"
+            className="p-1.5 hover:bg-primary/30 rounded-lg transition-all flex items-center justify-center min-w-6 h-6"
             title={chat.isFavorite ? "Remove from favorites" : "Add to favorites"}
             aria-label={
               chat.isFavorite ? "Remove from favorites" : "Add to favorites"
@@ -304,8 +330,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="bg-gradient-to-b from-background to-secondary/5 text-foreground border-r border-primary/20">
-      <SidebarContent className="flex flex-col justify-between h-full">
-        <div className="space-y-4">
+      <SidebarContent className="flex flex-col h-full p-0">
+        <div className="space-y-4 overflow-y-auto flex-1 px-0">
           {/* ⏰ IST Clock */}
           <div className="px-4 pt-4 pb-2 text-center">
             <div className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent flex items-center justify-center gap-2 pr-8">
@@ -318,13 +344,11 @@ export function AppSidebar() {
           <div className="px-4">
             <Button
               variant="default"
+              onClick={handleNewChat}
               className="w-full justify-start cursor-pointer gap-2 bg-gradient-to-r from-primary to-accent hover:shadow-xl hover:shadow-primary/40 transition-all text-white font-semibold"
-              asChild
             >
-              <Link to="/chats/new">
-                <MessageSquarePlus className="w-4 h-4" />
-                New Chat
-              </Link>
+              <MessageSquarePlus className="w-4 h-4" />
+              New Chat
             </Button>
           </div>
 
@@ -339,6 +363,15 @@ export function AppSidebar() {
                 className="pl-9 h-10 text-sm rounded-lg border-primary/30"
                 aria-label="Search chats"
               />
+              <button
+                onClick={handleRefreshChats}
+                disabled={isRefreshing}
+                className="absolute right-3 top-3 text-muted-foreground hover:text-primary transitions-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                title="Refresh chats"
+                aria-label="Refresh chats"
+              >
+                <RotateCcw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+              </button>
             </div>
           </div>
 
@@ -357,51 +390,36 @@ export function AppSidebar() {
             </SidebarGroup>
           )}
 
-          {/* Recent Chats */}
-          {filteredRecent.length > 0 && (
+          {/* All Chats */}
+          {filteredChats.length > 0 && (
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-bold uppercase px-4 pb-2 text-primary/80">
-                📌 Recent
+                💬 All Chats
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="space-y-1">
-                  {filteredRecent.map(renderChatItem)}
+                  {filteredChats.map(renderChatItem)}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
           )}
 
-          {/* Yesterday */}
-          {filteredYesterday.length > 0 && (
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-bold uppercase px-4 pb-2 text-primary/80">
-                📅 Yesterday
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu className="space-y-1">
-                  {filteredYesterday.map(renderChatItem)}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )}
-
-          {/* Last 7 Days */}
-          {filteredSevenDays.length > 0 && (
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-bold uppercase px-4 pb-2 text-primary/80">
-                🕐 Last 7 Days
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu className="space-y-1">
-                  {filteredSevenDays.map(renderChatItem)}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+          {filteredChats.length === 0 && favorites.length === 0 && (
+            <div className="px-4 py-8 text-center">
+              {isLoading || isLoadingChats ? (
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                  <p className="text-sm text-muted-foreground">Loading chats...</p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No chats found</p>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="px-4 py-3 border-t border-primary/20 bg-gradient-to-t from-primary/5 to-transparent space-y-2">
+        {/* Footer Actions - Sticky to bottom */}
+        <div className="sticky bottom-0 left-0 right-0 px-4 py-3 border-t border-primary/20 bg-gradient-to-t from-primary/5 to-transparent space-y-2 z-10">
           {/* About and Show Archived Side-by-Side */}
           <div className="flex gap-2">
             <Button

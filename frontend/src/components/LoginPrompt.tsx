@@ -18,12 +18,12 @@ export default function LoginPrompt() {
         <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
           Welcome to ChatPaat
         </h2>
-        <p className="text-lg text-muted-foreground mb-8">
+        <p className="text-lg text-muted-foreground mb-2">
           Sign in to start chatting with your AI assistant and experience smart,
           real-time conversations.
-          <p>
-            It can make mistakes, check wisely before you act!
-          </p>
+        </p>
+        <p className="text-sm text-muted-foreground/70 mb-8">
+          It can make mistakes, check wisely before you act!
         </p>
           
 

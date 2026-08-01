@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Settings, Bell } from "lucide-react";
+import { Sun, Moon, Settings, History } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "./ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
   const { currentTheme, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
-  const [unreadNotifications] = useState(0);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
   const isDark = currentTheme === "dark" || currentTheme !== "light";
@@ -22,7 +23,8 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-gradient-to-r from-background via-background to-primary/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 shadow-lg shadow-primary/10">
+    <>
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-gradient-to-r from-background via-background to-primary/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 shadow-lg shadow-primary/10">
       <div className="flex items-center justify-between px-4 py-3 md:px-6">
         {/* Left: Sidebar + Brand */}
         <div className="flex items-center gap-4">
@@ -49,25 +51,46 @@ export default function Navbar() {
 
         {/* Right: Controls */}
         <div className="flex items-center gap-2 md:gap-3">
-          {/* Notification Bell */}
+          {/* History Icon */}
           {user && (
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hover:bg-primary/10 hover:text-primary transition-all relative rounded-full"
-                title="Notifications"
-                aria-label="View notifications"
+            <div className="relative group">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Bell className="h-5 w-5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-destructive to-accent text-white text-xs flex items-center justify-center animate-pulse font-semibold">
-                    {unreadNotifications}
-                  </span>
-                )}
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/history")}
+                  className="hover:bg-primary/10 hover:text-primary transition-all rounded-full"
+                  title="Click to check history"
+                  aria-label="View chat history"
+                >
+                  <History className="h-5 w-5" />
+                </Button>
+              </motion.div>
             </div>
           )}
+
+          {/* Notification Bell
+          // {user && (
+          //   <div className="relative">
+          //     <Button
+          //       variant="ghost"
+          //       size="icon"
+          //       className="hover:bg-primary/10 hover:text-primary transition-all relative rounded-full"
+          //       title="Notifications"
+          //       aria-label="View notifications"
+          //     >
+          //       <Bell className="h-5 w-5" />
+          //       {unreadNotifications > 0 && (
+          //         <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-destructive to-accent text-white text-xs flex items-center justify-center animate-pulse font-semibold">
+          //           {unreadNotifications}
+          //         </span>
+          //       )}
+          //     </Button>
+          //   </div>
+          // )} */}
 
           {/* Theme Toggle */}
           <Button
@@ -149,40 +172,45 @@ export default function Navbar() {
           )}
         </div>
       </div>
-
-      {/* Sign Out Confirmation Dialog */}
-      {showSignOutDialog && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999]"
-          onClick={() => setShowSignOutDialog(false)}
-        >
-          <div 
-            className="bg-background border border-border rounded-lg shadow-xl p-6 max-w-sm mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold mb-2">Sign Out?</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              Are you sure you want to sign out? You'll need to sign in again to access your account.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowSignOutDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleSignOutConfirm}
-              >
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </header>
+
+    {/* Sign Out Confirmation Dialog - Full Screen Modal */}
+    {showSignOutDialog && (
+      <div 
+        className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-[999]"
+        onClick={() => setShowSignOutDialog(false)}
+      >
+        <motion.div 
+          className="bg-background border border-border rounded-lg shadow-xl p-6 max-w-sm mx-4"
+          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+        >
+          <h2 className="text-lg font-semibold mb-2">Sign Out?</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Are you sure you want to sign out? You'll need to sign in again to access your account.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSignOutDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleSignOutConfirm}
+            >
+              Sign Out
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    )}
+    </>
   );
 }

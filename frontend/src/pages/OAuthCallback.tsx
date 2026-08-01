@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { getApiBaseUrl } from '@/lib/config';
 
 const OAuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signInWithTokens, token } = useAuth();
+  const { signInWithTokens } = useAuth();
   const exchangeAttemptedRef = useRef(false);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ const OAuthCallback = () => {
     const exchangeTokens = async () => {
       try {
         const redirectUri = `${window.location.origin}/oauth-callback`;
-        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:7004';
+        const apiBaseUrl = getApiBaseUrl();
         
         const response = await fetch(`${apiBaseUrl}/api/auth/google/exchange/`, {
           method: 'POST',
