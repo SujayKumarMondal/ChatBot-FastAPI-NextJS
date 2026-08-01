@@ -11,11 +11,15 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from typing import Optional
 import hashlib
+from dotenv import load_dotenv
 
 # from win32comext import authorization
 from auth import SECRET_KEY
 from datetime import timezone
 import secrets, hashlib
+
+BACKEND_DIR = Path(__file__).resolve().parent
+load_dotenv(BACKEND_DIR / ".env")
 
 from db import get_db
 from models import CustomUser, Chat, ChatMessage, UserSearchHistory, PasswordResetToken
