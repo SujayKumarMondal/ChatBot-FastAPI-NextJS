@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { getApiBaseUrl } from '@/lib/config';
+import { useAuth } from '../context/AuthContext';
+import { getApiBaseUrl } from '../lib/config';
 
 const OAuthCallback = () => {
   const navigate = useNavigate();
