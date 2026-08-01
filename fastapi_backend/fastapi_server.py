@@ -87,6 +87,8 @@ DEFAULT_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:7004",
     "http://localhost:7004",
+    "https://chatpaat.netlify.app",
+    "https://chatbot-fastapi-nextjs.onrender.com",
 ]
 
 frontend_origin = os.getenv("FRONTEND_URL", "").strip()
@@ -110,6 +112,7 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://[a-zA-Z0-9-]+\.netlify\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
