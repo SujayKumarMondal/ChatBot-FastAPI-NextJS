@@ -57,6 +57,28 @@ app.openapi = custom_openapi
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 DEBUG = ENVIRONMENT == "development"
 
+def parse_origins(raw_value: str | None, fallback: list[str] | None = None) -> list[str]:
+    if not raw_value:
+        return fallback or []
+
+    cleaned = raw_value.strip()
+    if cleaned.startswith("[") and cleaned.endswith("]"):
+        cleaned = cleaned[1:-1]
+
+    origins = []
+    for item in cleaned.replace("\n", " ").split(","):
+        origin = item.strip().strip('"').strip("'")
+        if origin:
+            origins.append(origin)
+
+    if fallback:
+        for origin in fallback:
+            if origin not in origins:
+                origins.append(origin)
+
+    return origins
+
+
 # Get allowed origins from environment or use defaults
 DEFAULT_ORIGINS = [
     "http://localhost:5173",
@@ -67,13 +89,22 @@ DEFAULT_ORIGINS = [
     "http://localhost:7004",
 ]
 
+frontend_origin = os.getenv("FRONTEND_URL", "").strip()
+production_defaults = [
+    "https://chatpaat.netlify.app",
+    "https://chatpaat.vercel.app",
+    "https://chatbot-fastapi-nextjs.onrender.com",
+]
+if frontend_origin:
+    production_defaults.insert(0, frontend_origin)
+
 if ENVIRONMENT == "production":
-    ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv(
-        "ALLOWED_ORIGINS",
-        "https://chatpaat.vercel.app,https://chatpaat-api.render.com"
-    ).split(",") if origin.strip()]
+    ALLOWED_ORIGINS = parse_origins(
+        os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS"),
+        production_defaults,
+    )
 else:
-    ALLOWED_ORIGINS = DEFAULT_ORIGINS
+    ALLOWED_ORIGINS = parse_origins(os.getenv("CORS_ORIGINS"), DEFAULT_ORIGINS)
 
 # CORS middleware - secure configuration
 app.add_middleware(
