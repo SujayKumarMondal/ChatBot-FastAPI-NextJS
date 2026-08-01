@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,16 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 export default function SignInPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const state = location.state as { error?: string } | null;
+    if (state?.error) {
+      setError(state.error);
+    }
+  }, [location.state]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -82,6 +90,14 @@ export default function SignInPage() {
           variant="secondary"
           className="w-full mt-2"
           onClick={() => {
+            if (!GOOGLE_CLIENT_ID) {
+              const message =
+                "Google Sign-In is not configured. VITE_GOOGLE_CLIENT_ID is missing.";
+              console.error(message);
+              setError(message);
+              return;
+            }
+
             const redirectUri = `${window.location.origin}/oauth-callback`;
             console.log("🔐 Google OAuth Starting:");
             console.log("  Client ID:", GOOGLE_CLIENT_ID);

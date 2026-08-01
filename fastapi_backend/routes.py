@@ -37,9 +37,19 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
 # Google OAuth settings
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+
+def get_google_oauth_config() -> tuple[str, str]:
+    """Resolve Google OAuth credentials from environment variables."""
+    load_dotenv(BACKEND_DIR / ".env", override=False)
+    client_id = (os.getenv("GOOGLE_CLIENT_ID") or "").strip()
+    client_secret = (os.getenv("GOOGLE_CLIENT_SECRET") or "").strip()
+
+    if not client_id or not client_secret:
+        raise RuntimeError("Google OAuth client ID/secret are not configured.")
+
+    return client_id, client_secret
 
 # Groq API settings
 DEFAULT_GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -443,10 +453,11 @@ def _ensure_unique_username(db: Session, base_username: str) -> str:
 
 def _exchange_code_for_tokens(code: str, redirect_uri: str) -> dict:
     token_url = "https://oauth2.googleapis.com/token"
+    client_id, client_secret = get_google_oauth_config()
     data = {
         "code": code,
-        "client_id": GOOGLE_CLIENT_ID,
-        "client_secret": GOOGLE_CLIENT_SECRET,
+        "client_id": client_id,
+        "client_secret": client_secret,
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
     }
@@ -482,11 +493,14 @@ def google_exchange(req: GoogleExchangeRequest, db: Session = Depends(get_db)):
     and return local JWT tokens.
     Frontend should send the `code` it received and the `redirect_uri` used.
     """
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+    try:
+        get_google_oauth_config()
+    except RuntimeError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Google OAuth client ID/secret not configured")
+                            detail=str(e))
 
     redirect_uri = req.redirect_uri or f"{FRONTEND_URL}/oauth-callback"
+    print(f"[google_exchange] Received code; redirect_uri={redirect_uri}")
 
     try:
         token_data = _exchange_code_for_tokens(req.code, redirect_uri)
