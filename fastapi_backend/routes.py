@@ -7,10 +7,12 @@ import base64
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, logger, status, Header, UploadFile, File, Query
 from fastapi.responses import FileResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from typing import Optional
 import hashlib
+import re
 from dotenv import load_dotenv
 
 # from win32comext import authorization
@@ -70,6 +72,37 @@ def get_groq_config() -> tuple[str, str]:
 
     return groq_api_key, groq_api_url
 
+
+def _normalize_email(email: str) -> str:
+    return (email or "").strip().lower()
+
+
+def _validate_username(username: str) -> Optional[str]:
+    username_value = (username or "").strip()
+    if len(username_value) < 3:
+        return "Username must be at least 3 characters."
+    if not re.fullmatch(r"[A-Za-z0-9_]+", username_value):
+        return "Username can only contain letters, numbers, and underscores."
+    return None
+
+
+def _validate_email(email: str) -> Optional[str]:
+    email_value = (email or "").strip()
+    if not re.fullmatch(r"[^@\s]+@gmail\.com", email_value, re.IGNORECASE):
+        return "Email must end with @gmail.com."
+    return None
+
+
+def _validate_password(password: str) -> Optional[str]:
+    password_value = password or ""
+    if len(password_value) < 9:
+        return "Password must be at least 9 characters."
+    if not re.search(r"\d", password_value):
+        return "Password must include at least one number."
+    if not re.search(r"[^A-Za-z0-9\s]", password_value):
+        return "Password must include at least one special character."
+    return None
+
 from email_utils import send_email
 
 # ======================= Router =======================
@@ -96,7 +129,8 @@ def password_reset(req: PasswordResetRequest, db: Session = Depends(get_db)):
     - **email**: User's email address
     - Returns: Success message if email exists, silent if not
     """
-    user = db.query(CustomUser).filter(CustomUser.email == req.email).first()
+    normalized_email = _normalize_email(req.email)
+    user = db.query(CustomUser).filter(func.lower(CustomUser.email) == normalized_email).first()
     if user:
         token = secrets.token_urlsafe(48)
         token_hash = hashlib.sha256((token + SECRET_KEY).encode()).hexdigest()
@@ -361,8 +395,23 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
     """
     Register a new user
     """
+    normalized_username = (user_data.username or "").strip()
+    normalized_email = _normalize_email(user_data.email)
+
+    username_error = _validate_username(normalized_username)
+    if username_error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=username_error)
+
+    email_error = _validate_email(normalized_email)
+    if email_error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=email_error)
+
+    password_error = _validate_password(user_data.password)
+    if password_error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=password_error)
+
     # Check if username already exists
-    existing_user = db.query(CustomUser).filter(CustomUser.username == user_data.username).first()
+    existing_user = db.query(CustomUser).filter(func.lower(CustomUser.username) == normalized_username.lower()).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -370,17 +419,17 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
         )
     
     # Check if email already exists
-    existing_email = db.query(CustomUser).filter(CustomUser.email == user_data.email).first()
+    existing_email = db.query(CustomUser).filter(func.lower(CustomUser.email) == normalized_email).first()
     if existing_email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already exists."
+            detail="Email already exists"
         )
     
     # Create new user
     new_user = CustomUser(
-        username=user_data.username,
-        email=user_data.email,
+        username=normalized_username,
+        email=normalized_email,
         password=hash_password(user_data.password)
     )
     
@@ -409,7 +458,8 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
     Login user and return JWT tokens
     """
     # Find user by email
-    user = db.query(CustomUser).filter(CustomUser.email == user_data.email).first()
+    normalized_email = _normalize_email(user_data.email)
+    user = db.query(CustomUser).filter(func.lower(CustomUser.email) == normalized_email).first()
     
     if not user:
         raise HTTPException(
