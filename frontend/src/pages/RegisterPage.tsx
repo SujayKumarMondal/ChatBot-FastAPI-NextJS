@@ -3,10 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CheckCircle2, XCircle } from "lucide-react";
+import OtpVerificationModal from "@/components/OtpVerificationModal";
+import { getApiBaseUrl } from "@/lib/config";
 
 const usernamePattern = /^[A-Za-z0-9_]{3,}$/;
-const gmailPattern = /^[^\s@]+@gmail\.com$/i;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 const passwordPattern = /^(?=.*\d)(?=.*[^A-Za-z0-9\s]).{9,}$/;
+const API_BASE_URL = getApiBaseUrl();
 
 type FormState = {
   username: string;
@@ -16,12 +20,22 @@ type FormState = {
 
 type FormErrors = Partial<Record<keyof FormState | "form", string>>;
 
+type OtpFlowState = {
+  isOpen: boolean;
+  email: string;
+  username?: string;
+  password?: string;
+};
+
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState<FormState>({ username: "", email: "", password: "" });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [otpFlow, setOtpFlow] = useState<OtpFlowState>({ isOpen: false, email: "" });
+  const [otpError, setOtpError] = useState("");
+  const [otpSubmitting, setOtpSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -42,8 +56,8 @@ export default function RegisterPage() {
     const email = values.email.trim();
     if (!email) {
       nextErrors.email = "Email is required";
-    } else if (!gmailPattern.test(email)) {
-      nextErrors.email = "Email must end with @gmail.com";
+    } else if (!emailPattern.test(email)) {
+      nextErrors.email = "Please enter a valid email address";
     }
 
     const password = values.password;
@@ -56,6 +70,21 @@ export default function RegisterPage() {
     return nextErrors;
   };
 
+  const requestOtp = async (payload: { email: string; username?: string; password?: string }) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/request-otp/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: payload.email, purpose: "register", username: payload.username }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.detail || "Unable to send verification code");
+    }
+
+    return data;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const nextErrors = validateForm(form);
@@ -66,9 +95,18 @@ export default function RegisterPage() {
     }
 
     setIsSubmitting(true);
+    setOtpError("");
     try {
-      await register(form.username.trim(), form.email.trim().toLowerCase(), form.password);
-      navigate("/signin");
+      await requestOtp({
+        email: form.email.trim().toLowerCase(),
+        username: form.username.trim(),
+      });
+      setOtpFlow({
+        isOpen: true,
+        email: form.email.trim().toLowerCase(),
+        username: form.username.trim(),
+        password: form.password,
+      });
     } catch (err: any) {
       const message = err.message || "Registration failed";
       if (message.toLowerCase().includes("email already exists")) {
@@ -78,6 +116,47 @@ export default function RegisterPage() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleOtpConfirm = async (otp: string) => {
+    setOtpSubmitting(true);
+    setOtpError("");
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: otpFlow.email, otp, purpose: "register" }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.detail || "Verification failed");
+      }
+
+      await register(otpFlow.username?.trim() || form.username.trim(), otpFlow.email, otpFlow.password || form.password);
+      setOtpFlow({ isOpen: false, email: "" });
+      navigate("/signin", {
+        state: {
+          message: "Account created successfully. Please sign in with your email and password to continue.",
+          email: otpFlow.email,
+        },
+      });
+    } catch (err: any) {
+      setOtpError(err.message || "OTP verification failed");
+    } finally {
+      setOtpSubmitting(false);
+    }
+  };
+
+  const handleOtpResend = async () => {
+    setOtpError("");
+    try {
+      await requestOtp({
+        email: otpFlow.email,
+        username: otpFlow.username,
+      });
+    } catch (err: any) {
+      setOtpError(err.message || "Unable to resend verification code");
     }
   };
 
@@ -118,15 +197,27 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Input
-            name="email"
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            aria-invalid={Boolean(errors.email)}
-            required
-          />
+          <div className="relative">
+            <Input
+              name="email"
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              aria-invalid={Boolean(errors.email)}
+              className="pr-12"
+              required
+            />
+            {form.email.trim() ? (
+              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                {emailPattern.test(form.email.trim()) ? (
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-red-500" />
+                )}
+              </div>
+            ) : null}
+          </div>
           {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
         </div>
 
@@ -156,6 +247,19 @@ export default function RegisterPage() {
           </span>
         </p>
       </form>
+
+      <OtpVerificationModal
+        isOpen={otpFlow.isOpen}
+        title="Verify your email"
+        subtitle="Enter the 6-digit code we just sent to your inbox."
+        email={otpFlow.email}
+        onConfirm={handleOtpConfirm}
+        onCancel={() => setOtpFlow({ isOpen: false, email: "" })}
+        onResend={handleOtpResend}
+        isSubmitting={otpSubmitting}
+        error={otpError}
+        submittingLabel="Verifying..."
+      />
     </div>
   );
 }
