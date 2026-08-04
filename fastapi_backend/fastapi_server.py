@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -8,8 +9,9 @@ from dotenv import load_dotenv
 from db import init_db
 from routes import router
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from the backend directory explicitly
+BACKEND_DIR = Path(__file__).resolve().parent
+load_dotenv(BACKEND_DIR / ".env")
 
 # Initialize database
 # init_db()

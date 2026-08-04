@@ -35,7 +35,13 @@ const OAuthCallback = () => {
       try {
         const redirectUri = `${window.location.origin}/oauth-callback`;
         const apiBaseUrl = getApiBaseUrl();
-        
+
+        if (!apiBaseUrl || apiBaseUrl === "http://127.0.0.1:7004") {
+          console.error(
+            "API base URL is not configured properly. Check VITE_API_URL in your frontend environment."
+          );
+        }
+
         const response = await fetch(`${apiBaseUrl}/api/auth/google/exchange/`, {
           method: 'POST',
           headers: {

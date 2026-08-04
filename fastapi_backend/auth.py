@@ -1,11 +1,13 @@
 import os
+from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 
-load_dotenv()
+BACKEND_DIR = Path(__file__).resolve().parent
+load_dotenv(BACKEND_DIR / ".env")
 
 # Password hashing
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")

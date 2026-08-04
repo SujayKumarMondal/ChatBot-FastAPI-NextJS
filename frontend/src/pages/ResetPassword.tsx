@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getApiBaseUrl } from "@/lib/config";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -24,7 +25,8 @@ export default function ResetPassword() {
     if (password.length < 8) return setError("Password must be at least 8 characters");
     if (password !== confirm) return setError("Passwords do not match");
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/password-reset/confirm/`, {
+      const apiBaseUrl = getApiBaseUrl();
+      const res = await fetch(`${apiBaseUrl}/api/auth/password-reset/confirm/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password: password }),

@@ -7,15 +7,21 @@ import base64
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, logger, status, Header, UploadFile, File, Query
 from fastapi.responses import FileResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Any, Dict
 import hashlib
+import re
+from dotenv import load_dotenv
 
 # from win32comext import authorization
 from auth import SECRET_KEY
 from datetime import timezone
 import secrets, hashlib
+
+BACKEND_DIR = Path(__file__).resolve().parent
+load_dotenv(BACKEND_DIR / ".env")
 
 from db import get_db
 from models import CustomUser, Chat, ChatMessage, UserSearchHistory, PasswordResetToken
@@ -33,13 +39,163 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
 # Google OAuth settings
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+OTP_STORE: Dict[tuple[str, str], Dict[str, Any]] = {}
+
+
+def get_google_oauth_config() -> tuple[str, str]:
+    """Resolve Google OAuth credentials from environment variables."""
+    load_dotenv(BACKEND_DIR / ".env", override=False)
+    client_id = (os.getenv("GOOGLE_CLIENT_ID") or "").strip()
+    client_secret = (os.getenv("GOOGLE_CLIENT_SECRET") or "").strip()
+
+    if not client_id or not client_secret:
+        raise RuntimeError("Google OAuth client ID/secret are not configured.")
+
+    return client_id, client_secret
 
 # Groq API settings
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_API_URL = os.getenv("GROQ_API_URL")
+DEFAULT_GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+
+def get_groq_config() -> tuple[str, str]:
+    """Resolve Groq credentials from environment variables with safe defaults."""
+    load_dotenv(BACKEND_DIR / ".env", override=False)
+
+    groq_api_key = (os.getenv("GROQ_API_KEY") or "").strip()
+    groq_api_url = (os.getenv("GROQ_API_URL") or DEFAULT_GROQ_API_URL).strip()
+
+    if not groq_api_key:
+        raise RuntimeError("GROQ_API_KEY is not configured.")
+
+    if not groq_api_url.startswith(("http://", "https://")):
+        groq_api_url = DEFAULT_GROQ_API_URL
+
+    return groq_api_key, groq_api_url
+
+
+def _normalize_email(email: str) -> str:
+    return (email or "").strip().lower()
+
+
+def _validate_username(username: str) -> Optional[str]:
+    username_value = (username or "").strip()
+    if len(username_value) < 3:
+        return "Username must be at least 3 characters."
+    if not re.fullmatch(r"[A-Za-z0-9_]+", username_value):
+        return "Username can only contain letters, numbers, and underscores."
+    return None
+
+
+def _validate_email(email: str) -> Optional[str]:
+    email_value = (email or "").strip()
+    if not re.fullmatch(r"[^@\s]+@gmail\.com", email_value, re.IGNORECASE):
+        return "Email must end with @gmail.com."
+    return None
+
+
+def _validate_password(password: str) -> Optional[str]:
+    password_value = password or ""
+    if len(password_value) < 9:
+        return "Password must be at least 9 characters."
+    if not re.search(r"\d", password_value):
+        return "Password must include at least one number."
+    if not re.search(r"[^A-Za-z0-9\s]", password_value):
+        return "Password must include at least one special character."
+    return None
+
+
+def _generate_otp() -> str:
+    return f"{secrets.randbelow(900000) + 100000:06d}"
+
+
+def _clear_expired_otps(now: Optional[datetime] = None) -> None:
+    current_time = now or datetime.now(timezone.utc)
+    expired_keys = [key for key, value in OTP_STORE.items() if value["expires_at"] <= current_time]
+    for key in expired_keys:
+        del OTP_STORE[key]
+
+
+def _store_otp(email: str, purpose: str, otp: str) -> None:
+    normalized_email = _normalize_email(email)
+    OTP_STORE[(normalized_email, purpose)] = {
+        "otp": otp,
+        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=5),
+    }
+
+
+def _verify_otp(email: str, purpose: str, otp: str) -> bool:
+    _clear_expired_otps()
+    normalized_email = _normalize_email(email)
+    record = OTP_STORE.get((normalized_email, purpose))
+    if not record:
+        return False
+    if record["otp"] != otp:
+        return False
+    del OTP_STORE[(normalized_email, purpose)]
+    return True
+
+
+def _build_account_event_body(user_name: str, event: str) -> tuple[str, str]:
+    feedback_url = "https://forms.gle/qr9UtrExmRk7bn627"
+    if event == "register":
+        subject = "Welcome to ChatPaat"
+        body = (
+            f"Hi {user_name},\n\n"
+            "Welcome to ChatPaat!\n\n"
+            "Your account has been successfully created, and you're now ready to start using ChatPaat.\n\n"
+            "ChatPaat is designed to help you interact with an AI assistant for questions, ideas, learning, coding assistance, and everyday problem-solving.\n\n"
+            "You can now sign in and start your first conversation.\n\n"
+            "Thank you for choosing ChatPaat. We hope you have a great experience!\n\n"
+            "Best regards,\n"
+            "The ChatPaat Team"
+        )
+    elif event == "welcome_again":
+        subject = "Welcome back to ChatPaat"
+        body = (
+            f"Hi {user_name},\n\n"
+            "Welcome back to ChatPaat!\n\n"
+            "Your account is already active, and you can continue using ChatPaat right away.\n\n"
+            "We are glad to have you back and look forward to helping you with your next conversation.\n\n"
+            "Thank you for being part of the ChatPaat community.\n\n"
+            "Best regards,\n"
+            "The ChatPaat Team"
+        )
+    elif event == "signin":
+        subject = "You signed in to ChatPaat"
+        body = (
+            f"Hi {user_name},\n\n"
+            "You have successfully signed in to your ChatPaat account.\n\n"
+            "Your session is now active, and you can continue your conversations with ChatPaat.\n\n"
+            "If you did not initiate this sign-in, we recommend reviewing your account security and changing your password if necessary.\n\n"
+            "Thank you for using ChatPaat.\n\n"
+            "Best regards,\n"
+            "The ChatPaat Team"
+        )
+    else:
+        subject = "You signed out of ChatPaat"
+        body = (
+            f"Hi {user_name},\n\n"
+            "You have successfully signed out of your ChatPaat account.\n\n"
+            "We hope you enjoyed your experience. Since ChatPaat is continuously evolving, your feedback would mean a lot to us and will help us improve the application.\n\n"
+            f"If you have a moment, please share your experience with us:\n{feedback_url}\n\n"
+            "Whether you enjoyed something, encountered an issue, or have an idea for a new feature, we'd love to hear from you.\n\n"
+            "Thank you for trying ChatPaat and being part of its journey.\n\n"
+            "Best regards,\n"
+            "The ChatPaat Team"
+        )
+    return subject, body
+
+
+def _send_account_event_email(user_email: str, user_name: str, event: str) -> None:
+    subject, body = _build_account_event_body(user_name, event)
+    contact_email = os.getenv("CONTACT_EMAIL") or os.getenv("SMTP_USER") or os.getenv("SENDER_EMAIL")
+    try:
+        send_email(user_email, subject, body, reply_to=contact_email)
+    except Exception as exc:
+        print(f"[auth-email] failed to send {event} email: {exc}")
+
+
 from email_utils import send_email
 
 # ======================= Router =======================
@@ -57,6 +213,18 @@ class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
 
+
+class OtpRequest(BaseModel):
+    email: str
+    purpose: str = "register"
+    username: Optional[str] = None
+
+
+class OtpVerifyRequest(BaseModel):
+    email: str
+    otp: str
+    purpose: str = "register"
+
 # ======================= Password Management Endpoints =======================
 @router.post("/api/auth/password-reset/", tags=["Authentication"])
 def password_reset(req: PasswordResetRequest, db: Session = Depends(get_db)):
@@ -66,7 +234,8 @@ def password_reset(req: PasswordResetRequest, db: Session = Depends(get_db)):
     - **email**: User's email address
     - Returns: Success message if email exists, silent if not
     """
-    user = db.query(CustomUser).filter(CustomUser.email == req.email).first()
+    normalized_email = _normalize_email(req.email)
+    user = db.query(CustomUser).filter(func.lower(CustomUser.email) == normalized_email).first()
     if user:
         token = secrets.token_urlsafe(48)
         token_hash = hashlib.sha256((token + SECRET_KEY).encode()).hexdigest()
@@ -236,7 +405,8 @@ def get_current_user(token: str, db: Session) -> CustomUser:
 def create_chat_title(user_message: str) -> str:
     """Create a short title for the chat using Groq"""
     try:
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        groq_api_key, groq_api_url = get_groq_config()
+        headers = {"Authorization": f"Bearer {groq_api_key}"}
         payload = {
             "model": "llama-3.1-8b-instant",
             "messages": [
@@ -252,7 +422,7 @@ def create_chat_title(user_message: str) -> str:
             "max_tokens": 16,
             "temperature": 0.2,
         }
-        response = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=30)
+        response = requests.post(groq_api_url, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         data = response.json()
         title = data["choices"][0]["message"]["content"].strip()
@@ -325,13 +495,87 @@ def user_search(
 
 # ======================= Authentication Endpoints =======================
 
+@router.post("/api/auth/request-otp/", tags=["Authentication"])
+def request_otp(req: OtpRequest, db: Session = Depends(get_db)):
+    normalized_email = _normalize_email(req.email)
+    email_error = _validate_email(normalized_email)
+    if email_error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=email_error)
+
+    purpose = (req.purpose or "register").lower()
+    if purpose not in {"register", "login"}:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP purpose")
+
+    if purpose == "register":
+        existing_user = db.query(CustomUser).filter(func.lower(CustomUser.email) == normalized_email).first()
+        if existing_user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
+    else:
+        existing_user = db.query(CustomUser).filter(func.lower(CustomUser.email) == normalized_email).first()
+        if not existing_user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No account found for this email")
+
+    otp = _generate_otp()
+    _store_otp(normalized_email, purpose, otp)
+
+    display_name = (req.username or normalized_email.split("@", 1)[0]).strip() or "there"
+    subject = "Your ChatPaat verification code"
+    body = (
+        f"Hi {display_name},\n\n"
+        f"Your ChatPaat verification code is: {otp}\n\n"
+        "Enter this code to continue with your request. It will expire in 5 minutes.\n\n"
+        "If you did not request this code, you can safely ignore this email."
+    )
+
+    try:
+        send_email(normalized_email, subject, body)
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not send OTP email: {exc}") from exc
+
+    return {"detail": "OTP sent to your email"}
+
+
+@router.post("/api/auth/verify-otp/", tags=["Authentication"])
+def verify_otp(req: OtpVerifyRequest):
+    if not req.otp or len(req.otp) != 6:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP must be a 6-digit code")
+
+    verified = _verify_otp(req.email, (req.purpose or "register").lower(), req.otp)
+    if not verified:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired OTP")
+
+    return {"detail": "OTP verified successfully"}
+
+
+@router.post("/api/auth/signout-notify/", tags=["Authentication"])
+def signout_notify(authorization: str = Header(None), db: Session = Depends(get_db)):
+    user = get_current_user(authorization, db)
+    _send_account_event_email(user.email, user.username, "signout")
+    return {"detail": "Sign-out email sent"}
+
+
 @router.post("/api/register/", tags=["Authentication"])
 def register(user_data: UserRegister, db: Session = Depends(get_db)):
     """
     Register a new user
     """
+    normalized_username = (user_data.username or "").strip()
+    normalized_email = _normalize_email(user_data.email)
+
+    username_error = _validate_username(normalized_username)
+    if username_error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=username_error)
+
+    email_error = _validate_email(normalized_email)
+    if email_error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=email_error)
+
+    password_error = _validate_password(user_data.password)
+    if password_error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=password_error)
+
     # Check if username already exists
-    existing_user = db.query(CustomUser).filter(CustomUser.username == user_data.username).first()
+    existing_user = db.query(CustomUser).filter(func.lower(CustomUser.username) == normalized_username.lower()).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -339,17 +583,17 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
         )
     
     # Check if email already exists
-    existing_email = db.query(CustomUser).filter(CustomUser.email == user_data.email).first()
+    existing_email = db.query(CustomUser).filter(func.lower(CustomUser.email) == normalized_email).first()
     if existing_email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already exists."
+            detail="Email already exists"
         )
     
     # Create new user
     new_user = CustomUser(
-        username=user_data.username,
-        email=user_data.email,
+        username=normalized_username,
+        email=normalized_email,
         password=hash_password(user_data.password)
     )
     
@@ -360,6 +604,7 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
     # Create tokens
     access_token = create_access_token({"sub": str(new_user.id)})
     refresh_token = create_refresh_token({"sub": str(new_user.id)})
+    _send_account_event_email(new_user.email, new_user.username, "register")
     
     return {
         "access": access_token,
@@ -378,7 +623,8 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
     Login user and return JWT tokens
     """
     # Find user by email
-    user = db.query(CustomUser).filter(CustomUser.email == user_data.email).first()
+    normalized_email = _normalize_email(user_data.email)
+    user = db.query(CustomUser).filter(func.lower(CustomUser.email) == normalized_email).first()
     
     if not user:
         raise HTTPException(
@@ -396,6 +642,7 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
     # Create tokens
     access_token = create_access_token({"sub": str(user.id)})
     refresh_token = create_refresh_token({"sub": str(user.id)})
+    _send_account_event_email(user.email, user.username, "welcome_again")
     
     return {
         "access": access_token,
@@ -422,10 +669,11 @@ def _ensure_unique_username(db: Session, base_username: str) -> str:
 
 def _exchange_code_for_tokens(code: str, redirect_uri: str) -> dict:
     token_url = "https://oauth2.googleapis.com/token"
+    client_id, client_secret = get_google_oauth_config()
     data = {
         "code": code,
-        "client_id": GOOGLE_CLIENT_ID,
-        "client_secret": GOOGLE_CLIENT_SECRET,
+        "client_id": client_id,
+        "client_secret": client_secret,
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
     }
@@ -461,11 +709,14 @@ def google_exchange(req: GoogleExchangeRequest, db: Session = Depends(get_db)):
     and return local JWT tokens.
     Frontend should send the `code` it received and the `redirect_uri` used.
     """
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+    try:
+        get_google_oauth_config()
+    except RuntimeError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Google OAuth client ID/secret not configured")
+                            detail=str(e))
 
     redirect_uri = req.redirect_uri or f"{FRONTEND_URL}/oauth-callback"
+    print(f"[google_exchange] Received code; redirect_uri={redirect_uri}")
 
     try:
         token_data = _exchange_code_for_tokens(req.code, redirect_uri)
@@ -832,20 +1083,26 @@ def prompt_gpt(
     
     # Call Groq API
     try:
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        groq_api_key, groq_api_url = get_groq_config()
+        headers = {"Authorization": f"Bearer {groq_api_key}"}
         payload = {
             "model": "llama-3.1-8b-instant",
             "messages": groq_messages,
             "max_tokens": 1024,
             "temperature": 0.6,
         }
-        response = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=60)
+        response = requests.post(groq_api_url, headers=headers, json=payload, timeout=60)
         response.raise_for_status()
         data = response.json()
         groq_reply = data["choices"][0]["message"]["content"]
         
         if not groq_reply:
             raise RuntimeError("Groq returned no text.")
+    except RuntimeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Groq configuration error: {str(e)}"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
