@@ -1,34 +1,63 @@
 import os
-import smtplib
-from email.message import EmailMessage
 from typing import Optional
+
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-def send_email(to: str, subject: str, body: str, reply_to: Optional[str] = None) -> None:
-    """Send an email using SMTP with the configured Gmail credentials."""
-    host = (os.getenv("SMTP_HOST") or "smtp.gmail.com").strip()
-    port = int(os.getenv("SMTP_PORT") or "587")
-    username = (os.getenv("SMTP_USER") or os.getenv("SMTP_EMAIL") or "").strip()
-    password = (os.getenv("SMTP_PASS") or os.getenv("SMTP_PASSWORD") or "").strip()
-    sender_email = (os.getenv("SMTP_USER") or os.getenv("SMTP_EMAIL") or os.getenv("SENDER_EMAIL") or "").strip()
+def _resolve_sender_email() -> str:
+    """Resolve the sender email for outgoing mail."""
+    return (
+        os.getenv("RESEND_FROM_EMAIL")
+        or os.getenv("SENDER_EMAIL")
+        or ""
+    ).strip()
 
-    if not username or not password:
-        raise RuntimeError("SMTP credentials are not configured")
+
+def send_email(
+    to: str,
+    subject: str,
+    body: str,
+    reply_to: Optional[str] = None
+) -> None:
+    """Send an email via Resend API."""
+
+    api_key = (os.getenv("RESEND_API_KEY") or "").strip()
+    sender_email = _resolve_sender_email()
+
+    if not api_key:
+        raise RuntimeError("RESEND_API_KEY is not configured")
+
     if not sender_email:
-        raise RuntimeError("SMTP sender is not configured")
+        raise RuntimeError("No sender email is configured")
 
-    message = EmailMessage()
-    message["Subject"] = subject
-    message["From"] = sender_email
-    message["To"] = to
+    payload = {
+        "from": sender_email,
+        "to": [to],
+        "subject": subject,
+        "text": body,
+    }
+
     if reply_to:
-        message["Reply-To"] = reply_to
-    message.set_content(body)
+        payload["reply_to"] = [reply_to]
 
-    with smtplib.SMTP(host, port, timeout=20) as smtp:
-        smtp.starttls()
-        smtp.login(username, password)
-        smtp.send_message(message)
+    response = requests.post(
+        "https://api.resend.com/emails",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
+        timeout=20,
+    )
+
+    print("Resend status:", response.status_code)
+    print("Resend response:", response.text)
+
+    if response.status_code >= 400:
+        raise RuntimeError(
+            f"Resend send failed: "
+            f"{response.status_code} {response.text}"
+        )

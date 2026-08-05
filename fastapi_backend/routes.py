@@ -529,10 +529,13 @@ def request_otp(req: OtpRequest, db: Session = Depends(get_db)):
 
     try:
         send_email(normalized_email, subject, body)
+        return {"detail": "OTP sent to your email"}
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not send OTP email: {exc}") from exc
-
-    return {"detail": "OTP sent to your email"}
+        print(f"[auth-otp] Could not send OTP email: {exc}")
+        return {
+            "detail": "OTP generated successfully. Email delivery is currently unavailable; please try again shortly.",
+            "email_delivered": False,
+        }
 
 
 @router.post("/api/auth/verify-otp/", tags=["Authentication"])
