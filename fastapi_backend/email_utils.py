@@ -3,61 +3,40 @@ from typing import Optional
 
 import requests
 from dotenv import load_dotenv
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Email, From
 
 load_dotenv()
 
+def send_email(to: str, subject: str, body: str, reply_to: Optional[str] = None) -> None:
+    """Send an email using SendGrid API. Raises exceptions on failure.
 
-def _resolve_sender_email() -> str:
-    """Resolve the sender email for outgoing mail."""
-    return (
-        os.getenv("RESEND_FROM_EMAIL")
-        or os.getenv("SENDER_EMAIL")
-        or ""
-    ).strip()
-
-
-def send_email(
-    to: str,
-    subject: str,
-    body: str,
-    reply_to: Optional[str] = None
-) -> None:
-    """Send an email via Resend API."""
-
-    api_key = (os.getenv("RESEND_API_KEY") or "").strip()
-    sender_email = _resolve_sender_email()
+    Parameters:
+    - to: recipient email address
+    - subject: email subject
+    - body: plain-text body
+    - reply_to: optional reply-to address (recommended to be the user's email). The
+      actual From address must be the verified `SENDER_EMAIL` configured in SendGrid.
+    """
+    api_key = os.getenv("SENDGRID_API_KEY")
+    sender_email = os.getenv("SENDER_EMAIL")
 
     if not api_key:
-        raise RuntimeError("RESEND_API_KEY is not configured")
-
+        raise RuntimeError("SENDGRID_API_KEY is not configured")
     if not sender_email:
-        raise RuntimeError("No sender email is configured")
+        raise RuntimeError("SENDER_EMAIL is not configured")
 
-    payload = {
-        "from": sender_email,
-        "to": [to],
-        "subject": subject,
-        "text": body,
-    }
-
-    if reply_to:
-        payload["reply_to"] = [reply_to]
-
-    response = requests.post(
-        "https://api.resend.com/emails",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=20,
+    message = Mail(
+        from_email=From(sender_email),
+        to_emails=to,
+        subject=subject,
+        plain_text_content=body,
     )
 
-    print("Resend status:", response.status_code)
-    print("Resend response:", response.text)
+    if reply_to:
+        message.reply_to = Email(reply_to)
 
+    client = SendGridAPIClient(api_key)
+    response = client.send(message)
     if response.status_code >= 400:
-        raise RuntimeError(
-            f"Resend send failed: "
-            f"{response.status_code} {response.text}"
-        )
+        raise RuntimeError(f"SendGrid send failed: {response.status_code} {response.body}")
