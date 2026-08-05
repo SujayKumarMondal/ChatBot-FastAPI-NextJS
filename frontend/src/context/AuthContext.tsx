@@ -25,7 +25,7 @@ interface AuthContextType {
   isLoading: boolean; // Track if auth is being restored from localStorage
   signIn: (email: string, password: string) => Promise<void>;
   signInWithTokens: (access: string, refresh: string, user: User) => void;
-  signOut: () => Promise<void>;
+  signOut: () => void;
   logout: () => void; // Alias for signOut, used in ProfilePage
   register: (username: string, email: string, password: string) => Promise<void>;
   storeUserSearch: (searchQuery: string) => Promise<void>;
@@ -110,31 +110,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(errData.detail || "Registration failed");
       }
 
-      await response.json();
+      const data = await response.json();
+
+      // Save tokens from register response
+      sessionStorage.setItem("access_token", data.access);
+      sessionStorage.setItem("refresh_token", data.refresh);
+      setToken(data.access);
+
+      // Save user profile from register response
+      const userProfile: User = {
+        id: data.user.id,
+        username: data.user.username,
+        email: data.user.email,
+        image: `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.email}`,
+      };
+
+      setUser(userProfile);
+      sessionStorage.setItem("user", JSON.stringify(userProfile));
+      setRefreshTrigger(prev => prev + 1); // Trigger refetch in sidebar
     } catch (err: any) {
       throw new Error(err.message || "Registration failed");
     }
   };
 
   // 🔹 Sign Out
-  const signOut = async () => {
-    const storedToken = sessionStorage.getItem("access_token");
-    const storedUser = sessionStorage.getItem("user");
-    const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-
-    if (storedToken && parsedUser?.email) {
-      try {
-        await fetch(`${API_BASE_URL}/api/auth/signout-notify/`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${storedToken}`,
-          },
-        });
-      } catch (err) {
-        console.error("Failed to send sign-out email", err);
-      }
-    }
-
+  const signOut = () => {
     setUser(null);
     setToken(null);
     sessionStorage.removeItem("user");
