@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AlertCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export default function SignInPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary/10">
       <form
         onSubmit={handleSubmit}
-        className="bg-gradient-to-br from-card to-card/80 border border-primary/20 p-8 rounded-2xl shadow-xl shadow-primary/20 w-full max-w-md space-y-6"
+        className="relative bg-gradient-to-br from-card to-card/80 border border-primary/20 p-8 rounded-2xl shadow-xl shadow-primary/20 w-full max-w-md space-y-6"
       >
         {/* Logo Header */}
         <div className="flex flex-col items-center gap-3 mb-6">
@@ -115,15 +116,21 @@ export default function SignInPage() {
         >
           Sign In with Google
         </Button>
-        <p className="text-center text-sm">
-          Don’t have an account?{" "}
-          <span
-            className="text-primary cursor-pointer"
-            onClick={() => navigate("/register")}
-          >
-            Register
-          </span>
-        </p>
+        <div className="space-y-2 text-center">
+          <p className="text-sm">
+            Don’t have an account?{" "}
+            <span
+              className="text-primary cursor-pointer"
+              onClick={() => navigate("/register")}
+            >
+              Register
+            </span>
+          </p>
+          <div className="flex items-center justify-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <span>Forgot password is temporarily unavailable.</span>
+          </div>
+        </div>
       </form>
     </div>
   );
