@@ -21,7 +21,7 @@ ChatPaat represents a modern, production-ready solution for intelligent conversa
 ### 🎯 Core Vision
 - **User-Centric Design**: Intuitive interface that works on any device
 - **Security First**: JWT authentication with encrypted passwords
-- **AI-Powered**: Powered by state-of-the-art Groq LLM (llama-3.1-8b-instant)
+- **AI-Powered**: Powered by OpenAI GPT-OSS 20B through Groq
 - **Real-Time Interactions**: Instant AI responses with typing indicators
 - **Privacy Protected**: All conversations isolated to individual users
 - **Persistent Storage**: Never lose your conversation history
@@ -40,7 +40,7 @@ ChatPaat represents a modern, production-ready solution for intelligent conversa
 - **Account Deletion**: Full data removal on account deletion
 
 ### 💬 **Intelligent Chat Features**
-- **Real-Time AI Conversations**: Instant responses from Groq's LLaMA 3.1 model
+- **Real-Time AI Conversations**: Instant responses from Groq's OpenAI GPT-OSS 20B model
 - **Chat Session Management**: Create, organize, and manage multiple conversations
 - **Persistent Chat History**: Every message stored securely in the database
 - **Automatic Chat Titles**: AI-generated titles for easy conversation identification
@@ -1486,7 +1486,7 @@ ChatPaat represents a production-ready solution that combines:
 
 ### 15.2 Key Achievements
 ✅ Complete authentication system with Google OAuth
-✅ Real-time AI chat with Groq LLaMA 3.1
+✅ Real-time AI chat with Groq OpenAI GPT-OSS 20B
 ✅ Persistent conversation history
 ✅ Profile management with image upload
 ✅ Responsive design for all devices

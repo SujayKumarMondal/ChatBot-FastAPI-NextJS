@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage() {
           <ul className="list-disc pl-6 space-y-1">
             <li>Operating ChatPaat and providing AI-powered conversation services.</li>
             <li>Maintaining conversation history and user accounts.</li>
-            <li>Generating AI responses via Groq's LLaMA API.</li>
+            <li>Generating AI responses via Groq's OpenAI GPT-OSS API.</li>
             <li>Providing customer support and responding to inquiries.</li>
             <li>Monitoring service usage, preventing abuse, and detecting security threats.</li>
             <li>Improving service quality and model performance through aggregated data analysis.</li>
@@ -109,7 +109,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-lg font-semibold mb-2">6. AI Model & Content Processing</h2>
           <p className="leading-relaxed mb-2">
-            ChatPaat uses Groq's LLaMA 3.1-8b model to generate responses:
+            ChatPaat uses Groq's OpenAI GPT-OSS 20B model to generate responses:
           </p>
           <ul className="list-disc pl-6 space-y-1">
             <li>Your prompts are sent to Groq's servers for processing and may be logged.</li>

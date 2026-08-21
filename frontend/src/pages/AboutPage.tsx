@@ -80,14 +80,14 @@ export const AboutPage = () => {
             <Badge className="bg-primary/20 text-primary">FastAPI</Badge> backend and{" "}
             <Badge className="bg-secondary/20 text-secondary">React frontend</Badge>,
             powered by{" "}
-            <Badge className="bg-accent/20 text-accent">Groq LLaMA 3.1</Badge>.
+            <Badge className="bg-accent/20 text-accent">Groq OpenAI GPT-OSS 20B</Badge>.
             It provides intelligent, secure conversations with enterprise-grade authentication.
           </p>
 
           <div className="space-y-2 text-sm">
             <p>
               <Zap className="inline w-4 h-4 text-accent mr-2" />
-              Lightning-fast AI responses with LLaMA 3.1-8b model
+              Lightning-fast AI responses with OpenAI GPT-OSS 20B model
             </p>
             <p>
               <Sparkles className="inline w-4 h-4 text-primary mr-2" />
@@ -121,7 +121,7 @@ export const AboutPage = () => {
             </div>
             <div className="text-sm">
               <p className="font-semibold text-secondary mb-1">AI Engine</p>
-              <p className="text-muted-foreground">Groq LLaMA 3.1-8b-instant model</p>
+              <p className="text-muted-foreground">Groq OpenAI GPT-OSS 20B model</p>
             </div>
             <div className="text-sm">
               <p className="font-semibold text-secondary mb-1">Database</p>
@@ -145,7 +145,7 @@ export const AboutPage = () => {
           </h2>
 
           <ul className="text-sm space-y-2">
-            <li>✨ Real-time AI conversations with LLaMA 3.1 model</li>
+            <li>✨ Real-time AI conversations with OpenAI GPT-OSS 20B model</li>
             <li>💾 Persistent chat history with time-based organization</li>
             <li>🔐 Enterprise-grade security: JWT tokens & OAuth 2.0</li>
             <li>📱 Fully responsive design across all devices</li>

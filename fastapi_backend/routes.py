@@ -55,6 +55,7 @@ def get_google_oauth_config() -> tuple[str, str]:
 
 # Groq API settings
 DEFAULT_GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b"
 
 
 def get_groq_config() -> tuple[str, str]:
@@ -71,6 +72,10 @@ def get_groq_config() -> tuple[str, str]:
         groq_api_url = DEFAULT_GROQ_API_URL
 
     return groq_api_key, groq_api_url
+
+
+def get_groq_model() -> str:
+    return (os.getenv("GROQ_MODEL") or DEFAULT_GROQ_MODEL).strip()
 
 
 def _normalize_email(email: str) -> str:
@@ -303,7 +308,7 @@ def create_chat_title(user_message: str) -> str:
         groq_api_key, groq_api_url = get_groq_config()
         headers = {"Authorization": f"Bearer {groq_api_key}"}
         payload = {
-            "model": "llama-3.1-8b-instant",
+            "model": get_groq_model(),
             "messages": [
                 {
                     "role": "system",
@@ -920,11 +925,13 @@ def prompt_gpt(
         groq_api_key, groq_api_url = get_groq_config()
         headers = {"Authorization": f"Bearer {groq_api_key}"}
         payload = {
-            "model": "llama-3.1-8b-instant",
+            "model": get_groq_model(),
             "messages": groq_messages,
             "max_tokens": 1024,
             "temperature": 0.6,
         }
+        if payload["model"].startswith("openai/gpt-oss"):
+            payload["reasoning_effort"] = "low"
         response = requests.post(groq_api_url, headers=headers, json=payload, timeout=60)
         response.raise_for_status()
         data = response.json()
