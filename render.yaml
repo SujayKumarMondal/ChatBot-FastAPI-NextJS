@@ -44,6 +44,8 @@ services:
         value: "0.0.0.0"
       - key: PORT
         value: "10000"
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
       
       # These should be set in Render dashboard:
       # - DB_NAME

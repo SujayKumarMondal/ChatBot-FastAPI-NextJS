@@ -453,18 +453,18 @@ const { data: messages } = useQuery({
 | **Anthropic Claude** | Slow | Expensive | Best | Strict | ❌ Too expensive |
 | **Meta Llama (self-hosted)** | Depends | None | Good | Depends | Complex to host |
 
-#### **Selected**: Groq (llama-3.1-8b-instant)
+#### **Selected**: Groq (openai/gpt-oss-20b)
 
 #### **Rationale**:
 - **Speed**: Groq delivers responses in <1 second (vs 3-5 sec for GPT-4)
 - **Cost**: $0.10 per million tokens (vs $3-15 for GPT-4)
-- **Quality**: Llama 3.1 8B sufficient for conversational AI
+- **Quality**: GPT-OSS 20B provides strong conversational AI quality
 - **Throttle**: 30+ concurrent requests allowed
 - **Latency**: Sub-second inference on specialized hardware
 
 #### **Performance Comparison**:
 ```
-Groq (Llama 3.1 8B): 0.3-0.8 sec latency
+Groq (GPT-OSS 20B): low-latency responses
 OpenAI GPT-3.5:      2-4 sec latency
 OpenAI GPT-4:        5-10 sec latency
 Anthropic Claude:    3-6 sec latency

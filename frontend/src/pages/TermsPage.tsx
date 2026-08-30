@@ -22,7 +22,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold mb-2">1. AI-Generated Content Disclaimer</h2>
           <p className="leading-relaxed">
-            ChatPaat leverages artificial intelligence powered by Groq's LLaMA 3.1 model to generate responses. While we strive for accuracy and quality, AI-generated content may contain inaccuracies, outdated information, or incomplete responses. You acknowledge and agree that:
+            ChatPaat leverages artificial intelligence powered by Groq's OpenAI GPT-OSS 20B model to generate responses. While we strive for accuracy and quality, AI-generated content may contain inaccuracies, outdated information, or incomplete responses. You acknowledge and agree that:
           </p>
           <ul className="list-disc pl-6 space-y-1 mt-2">
             <li>All AI responses should be independently verified before reliance.</li>
