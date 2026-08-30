@@ -34,12 +34,12 @@ def custom_openapi():
             "type": "http",
             "scheme": "bearer",
             "bearerFormat": "JWT",
-            "description": "Enter JWT token (get from /api/login/ endpoint)"
+            "description": "Enter JWT token returned by an OAuth exchange"
         }
     }
     
-    # Add security requirement to all endpoints except login/register/oauth
-    public_endpoints = ["/api/login/", "/api/register/", "/api/auth/google/exchange/", "/api/refresh-token/"]
+    # Add security requirement to all endpoints except OAuth exchanges and refresh
+    public_endpoints = ["/api/auth/google/exchange/", "/api/auth/github/exchange/", "/api/refresh-token/"]
     
     for path, path_item in openapi_schema.get("paths", {}).items():
         for operation in path_item.values():

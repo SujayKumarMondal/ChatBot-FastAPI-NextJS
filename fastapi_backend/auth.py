@@ -3,36 +3,15 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt
-from passlib.context import CryptContext
 from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parent
 load_dotenv(BACKEND_DIR / ".env")
 
-# Password hashing
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 # JWT configuration
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 EXPIRE_HOURS = int(os.getenv("JWT_EXPIRE_HOURS", "24"))
-
-
-def hash_password(password: str) -> str:
-    """Hash a password using bcrypt"""
-    # Bcrypt has a 72 byte limit, so truncate if necessary
-    password = password[:72]
-    return pwd_context.hash(password)
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash"""
-    try:
-        # Bcrypt has a 72 byte limit, so truncate if necessary
-        plain_password = plain_password[:72]
-        return pwd_context.verify(plain_password, hashed_password)
-    except Exception:
-        # Handle case where hashed_password is not a valid bcrypt hash
-        return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

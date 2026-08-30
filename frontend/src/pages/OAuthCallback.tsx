@@ -15,18 +15,19 @@ const OAuthCallback = () => {
     exchangeAttemptedRef.current = true;
 
     const code = searchParams.get('code');
+    const provider = searchParams.get('state') === 'github' ? 'github' : 'google';
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
 
     if (error) {
       console.error('OAuth error:', error, errorDescription);
-      navigate('/signin', { state: { error: errorDescription || error } });
+      navigate('/', { replace: true, state: { error: errorDescription || error } });
       return;
     }
 
     if (!code) {
       console.error('No authorization code received');
-      navigate('/signin', { state: { error: 'No authorization code received' } });
+      navigate('/', { replace: true, state: { error: 'No authorization code received' } });
       return;
     }
 
@@ -42,7 +43,7 @@ const OAuthCallback = () => {
           );
         }
 
-        const response = await fetch(`${apiBaseUrl}/api/auth/google/exchange/`, {
+        const response = await fetch(`${apiBaseUrl}/api/auth/${provider}/exchange/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -80,7 +81,7 @@ const OAuthCallback = () => {
         }, 50);
       } catch (err: any) {
         console.error('Token exchange failed:', err);
-        navigate('/signin', { state: { error: err.message } });
+        navigate('/', { replace: true, state: { error: err.message } });
       }
     };
 

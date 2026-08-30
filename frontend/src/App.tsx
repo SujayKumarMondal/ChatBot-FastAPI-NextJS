@@ -1,10 +1,8 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import MainLayout from "./components/MainLayout";
 import HomePage from "./pages/HomePage";
-import SignInPage from "./pages/SignIn";
 import OAuthCallback from "./pages/OAuthCallback";
 import { AboutPage } from "./pages/AboutPage";
-import RegisterPage from "./pages/RegisterPage";
 import { AuthProvider } from "./context/AuthContext";
 import { SessionTimeoutProvider } from "./context/SessionTimeoutContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -17,8 +15,6 @@ import HistoryPage from "./pages/HistoryPage";
 import PageTransition from "./components/PageTransition";
 import SessionWarningModal from "./components/SessionWarningModal";
 
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
 
 const App = () => {
   return (
@@ -29,12 +25,9 @@ const App = () => {
             <BrowserRouter>
             <Routes>
               {/* Auth routes */}
-              <Route path="/signin" element={<PageTransition><SignInPage /></PageTransition>} />
+              <Route path="/signin" element={<PageTransition><HomePage /></PageTransition>} />
               <Route path="/oauth-callback" element={<PageTransition><OAuthCallback /></PageTransition>} />
-              <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
               <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
-              <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
-              <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
               {/* Settings & Profile routes */}
               <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
               <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
