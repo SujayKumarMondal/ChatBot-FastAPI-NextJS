@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { ArrowLeft, User, Lock, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, User, Trash2, Upload } from "lucide-react";
 import {
   getUserProfile,
   updateUserProfile,

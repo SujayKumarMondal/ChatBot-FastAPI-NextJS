@@ -11,7 +11,7 @@ import {
   Globe,
   Briefcase,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarTrigger } from "./ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -25,9 +25,14 @@ export default function Navbar() {
   const developerRef = useRef<HTMLDivElement | null>(null);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [showDeveloperMenu, setShowDeveloperMenu] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
-  const avatarSrc = user?.image && /^https?:\/\//i.test(user.image) ? user.image : "";
+  const avatarSrc = user?.image ?? "";
   const isDark = currentTheme === "dark" || currentTheme !== "light";
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [user?.image]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -271,18 +276,14 @@ export default function Navbar() {
                     tabIndex={0}
                     aria-label="Open profile"
                   >
-                    {avatarSrc ? (
+                    {avatarSrc && !avatarFailed ? (
                       <img
                         src={avatarSrc}
                         alt={user.username}
                         className="h-full w-full object-cover"
                         referrerPolicy="no-referrer"
                         crossOrigin="anonymous"
-                        onError={(event) => {
-                          const target = event.currentTarget as HTMLImageElement;
-                          target.style.display = "none";
-                          target.parentElement?.setAttribute("data-fallback", "true");
-                        }}
+                        onError={() => setAvatarFailed(true)}
                       />
                     ) : null}
 

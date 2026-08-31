@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const profileWithStoredImage = {
       ...userProfile,
-      image: userProfile.image || "",
+      image: userProfile.image ?? "",
       oauth_provider: userProfile.oauth_provider || "google",
     };
 

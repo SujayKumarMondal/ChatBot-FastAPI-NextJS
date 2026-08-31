@@ -162,7 +162,7 @@ export default function HistoryPage() {
             Please log in to view history
           </h1>
           <Button onClick={() => navigate("/")} className="rounded-full">
-            Continue with Google or GitHub
+            Continue with Google
           </Button>
         </div>
       </div>

@@ -37,12 +37,10 @@ interface IChat {
 
 export function AppSidebar() {
   const [allChats, setAllChats] = useState<IChat[]>([]);
-  const { user, isLoading, refreshTrigger, token } = useAuth();
+  const { user, isLoading, refreshTrigger } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const isMountedRef = useRef(true);
-  const [isLoadingChats, setIsLoadingChats] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
     chatId: string | null;
@@ -64,11 +62,9 @@ export function AppSidebar() {
     if (!user || !user.id) {
       console.log("❌ No user available, clearing chats", { user, userId: user?.id });
       setAllChats([]);
-      setIsLoadingChats(false);
       return;
     }
     
-    setIsLoadingChats(true);
     try {
       console.log("🔄 Fetching chats for user:", user.id);
       const chatsData = await getChatsByUserId(user.id);
@@ -85,8 +81,6 @@ export function AppSidebar() {
     } catch (error) {
       console.error("❌ Error fetching chats:", error);
       setAllChats([]);
-    } finally {
-      setIsLoadingChats(false);
     }
   }, [user, isLoading]);
 
@@ -113,26 +107,6 @@ export function AppSidebar() {
     };
   }, []);
 
-  const handleRefreshChats = async () => {
-    setIsRefreshing(true);
-    try {
-      await fetchChatsData();
-      // addToast({
-      //   type: "success",
-      //   message: "Chats refreshed successfully",
-      //   duration: 1500,
-      // });
-    } catch (error) {
-      console.error("Error refreshing chats:", error);
-      addToast({
-        type: "error",
-        message: "Failed to refresh chats",
-        duration: 3500,
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   const toggleFavorite = (chatId: string) => {
     const updatedChats = allChats.map((chat) =>
