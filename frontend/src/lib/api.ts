@@ -284,24 +284,6 @@ export async function updateUserProfile(
   }
 }
 
-// 🔹 Change password
-export async function changePassword(
-  data: {
-    old_password: string;
-    new_password: string;
-  },
-  token: string
-) {
-  try {
-    const response = await api.post("/api/profile/change-password/", data, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  } catch (err: unknown) {
-    handleError(err);
-  }
-}
-
 // 🔹 Delete account
 export async function deleteAccount(token: string) {
   try {

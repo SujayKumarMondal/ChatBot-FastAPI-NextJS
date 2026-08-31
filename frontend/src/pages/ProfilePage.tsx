@@ -4,12 +4,11 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { ArrowLeft, User, Lock, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, User, Trash2, Upload } from "lucide-react";
 import {
   getUserProfile,
   updateUserProfile,
   uploadProfileImage,
-  changePassword,
   deleteAccount,
 } from "../lib/api";
 import { storeProfileImage } from "../lib/imageStorage";
@@ -60,7 +59,7 @@ export default function ProfilePage() {
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"profile" | "password" | "delete">(
+  const [activeTab, setActiveTab] = useState<"profile" | "delete">(
     "profile"
   );
   const [previewImage, setPreviewImage] = useState<string | null>(user?.image || null);
@@ -69,9 +68,6 @@ export default function ProfilePage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Fetch profile on mount
   useEffect(() => {
@@ -170,7 +166,7 @@ export default function ProfilePage() {
         const updatedEmail = response.email || email;
         const username = user?.username || "User";
         logout();
-        navigate("/signin");
+        navigate("/");
         addToast({
           message: `For ${username}, the Email is updated to: ${updatedEmail}. Please log in using that updated email`,
           type: "success",
@@ -185,56 +181,6 @@ export default function ProfilePage() {
     } catch (err: any) {
       addToast({
         message: err.message || "Failed to update profile",
-        type: "error",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // ✅ Change Password
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newPassword !== confirmPassword) {
-      addToast({
-        message: "Passwords do not match",
-        type: "error",
-      });
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      addToast({
-        message: "Password must be at least 8 characters",
-        type: "error",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      if (!token) return;
-
-      await changePassword(
-        {
-          old_password: oldPassword,
-          new_password: newPassword,
-        },
-        token
-      );
-
-      // Auto logout and show toast
-      logout();
-      navigate("/signin");
-      addToast({
-        message: "Password is updated. Please Log in again",
-        type: "success",
-      });
-    } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to change password",
         type: "error",
       });
     } finally {
@@ -260,7 +206,7 @@ export default function ProfilePage() {
 
       // Auto logout and show toast
       logout();
-      navigate("/signin");
+      navigate("/");
       addToast({
         message: "Account deleted successfully. All your data has been removed.",
         type: "success",
@@ -317,17 +263,6 @@ export default function ProfilePage() {
           >
             <User className="inline h-4 w-4 mr-2" />
             Profile Info
-          </button>
-          <button
-            onClick={() => setActiveTab("password")}
-            className={`pb-3 px-4 font-medium transition-colors border-b-2 -mb-1 ${
-              activeTab === "password"
-                ? "text-primary border-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            }`}
-          >
-            <Lock className="inline h-4 w-4 mr-2" />
-            Password
           </button>
           <button
             onClick={() => setActiveTab("delete")}
@@ -480,96 +415,6 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        {/* Change Password Tab */}
-        {activeTab === "password" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>Update your password for security</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleChangePassword} className="space-y-4">
-                {/* Old Password */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Current Password
-                  </label>
-                  <Input
-                    type="password"
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    required
-                    placeholder="Enter current password"
-                  />
-                </div>
-
-                {/* New Password */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    New Password
-                  </label>
-                  <Input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    placeholder="Enter new password"
-                    minLength={8}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Minimum 8 characters
-                  </p>
-                </div>
-
-                {/* Confirm Password */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Confirm New Password
-                  </label>
-                  <Input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    placeholder="Confirm new password"
-                    minLength={8}
-                  />
-                </div>
-
-                {/* Warning */}
-                <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-md">
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                    ⚠️ You will be logged out after changing your password.
-                  </p>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="gap-2"
-                  >
-                    {isLoading ? "Updating..." : "Update Password"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setOldPassword("");
-                      setNewPassword("");
-                      setConfirmPassword("");
-                    }}
-                    disabled={isLoading}
-                  >
-                    Clear
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Delete Account Tab */}
         {activeTab === "delete" && (
           <Card className="border-destructive/30">
@@ -590,7 +435,7 @@ export default function ProfilePage() {
                   <li>All your chats will be permanently deleted</li>
                   <li>All your search history will be removed</li>
                   <li>You won't be able to access your account anymore</li>
-                  <li>You'll need to register again to use ChatPaat</li>
+                  <li>You'll need to sign in again to use ChatPaat</li>
                 </ul>
               </div>
 

@@ -5,7 +5,6 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { getProfileImageByEmail } from "../lib/imageStorage";
 import { getApiBaseUrl } from "../lib/config";
 
 const API_BASE_URL = getApiBaseUrl();
@@ -17,17 +16,16 @@ interface User {
   image?: string;
   first_name?: string;
   last_name?: string;
+  oauth_provider?: "google";
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean; // Track if auth is being restored from localStorage
-  signIn: (email: string, password: string) => Promise<void>;
   signInWithTokens: (access: string, refresh: string, user: User) => void;
   signOut: () => void;
   logout: () => void; // Alias for signOut, used in ProfilePage
-  register: (username: string, email: string, password: string) => Promise<void>;
   storeUserSearch: (searchQuery: string) => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
   refreshTrigger: number; // Trigger for external components to refetch on auth change
@@ -56,82 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false); // Auth restoration complete
   }, []);
 
-  // 🔹 Sign In (JWT login with FastAPI backend)
-  const signIn = async (email: string, password: string) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/login/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) {
-      const errData = await response.json();
-      throw new Error(errData.detail || "Invalid email or password");
-    }
-
-    const data = await response.json();
-    console.log("🔐 Login response received:", data);
-    
-    sessionStorage.setItem("access_token", data.access);
-    sessionStorage.setItem("refresh_token", data.refresh);
-    setToken(data.access);
-
-    // Try to get stored image from localStorage, fallback to dicebear
-    const storedImage = getProfileImageByEmail(email);
-    const userProfile: User = {
-      id: data.user.id,
-      username: data.user.username,
-      email: data.user.email,
-      image: storedImage || `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.email}`,
-    };
-
-    console.log("👤 Setting user profile:", userProfile);
-    setUser(userProfile);
-    sessionStorage.setItem("user", JSON.stringify(userProfile));
-    setRefreshTrigger(prev => prev + 1); // Trigger refetch in sidebar
-  } catch (err: any) {
-    throw new Error(err.message || "Login failed");
-  }
-};
-
-
-  // 🔹 Register (calls FastAPI backend)
-  const register = async (username: string, email: string, password: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/register/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail || "Registration failed");
-      }
-
-      const data = await response.json();
-
-      // Save tokens from register response
-      sessionStorage.setItem("access_token", data.access);
-      sessionStorage.setItem("refresh_token", data.refresh);
-      setToken(data.access);
-
-      // Save user profile from register response
-      const userProfile: User = {
-        id: data.user.id,
-        username: data.user.username,
-        email: data.user.email,
-        image: `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.email}`,
-      };
-
-      setUser(userProfile);
-      sessionStorage.setItem("user", JSON.stringify(userProfile));
-      setRefreshTrigger(prev => prev + 1); // Trigger refetch in sidebar
-    } catch (err: any) {
-      throw new Error(err.message || "Registration failed");
-    }
-  };
 
   // 🔹 Sign Out
   const signOut = () => {
@@ -150,18 +72,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 🔹 Sign In With Tokens (used by OAuth callback)
   const signInWithTokens = (access: string, refresh: string, userProfile: User) => {
-    // Store tokens immediately
     sessionStorage.setItem("access_token", access);
     sessionStorage.setItem("refresh_token", refresh);
-    
-    // Update state - store immediately in sessionStorage first to ensure persistence
-    const storedImage = getProfileImageByEmail(userProfile.email);
+
     const profileWithStoredImage = {
       ...userProfile,
-      image: storedImage || userProfile.image,
+      image: userProfile.image ?? "",
+      oauth_provider: userProfile.oauth_provider || "google",
     };
-    
-    // Update all state synchronously
+
     setToken(access);
     setUser(profileWithStoredImage);
     sessionStorage.setItem("user", JSON.stringify(profileWithStoredImage));
@@ -203,7 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, signIn, signInWithTokens, signOut, logout, register, storeUserSearch, updateUser, refreshTrigger }}>
+    <AuthContext.Provider value={{ user, token, isLoading, signInWithTokens, signOut, logout, storeUserSearch, updateUser, refreshTrigger }}>
       {children}
     </AuthContext.Provider>
   );

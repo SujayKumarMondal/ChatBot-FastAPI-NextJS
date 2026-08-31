@@ -1,17 +1,8 @@
 import {
-  Bot,
   MessageSquare,
-  Zap,
-  MessageSquarePlus,
-  Search,
   Star,
-  Archive,
   Trash2,
   AlertTriangle,
-  Github,
-  Linkedin,
-  Globe,
-  RotateCcw,
 } from "lucide-react";
 
 import {
@@ -25,14 +16,10 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-// import { Badge } from "@/components/ui/badge";
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   getChatsByUserId,
-  deleteChat,
 } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
@@ -50,14 +37,10 @@ interface IChat {
 
 export function AppSidebar() {
   const [allChats, setAllChats] = useState<IChat[]>([]);
-  const { user, isLoading, refreshTrigger, token } = useAuth();
+  const { user, isLoading, refreshTrigger } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showArchived, setShowArchived] = useState(false);
   const isMountedRef = useRef(true);
-  const [isLoadingChats, setIsLoadingChats] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
     chatId: string | null;
@@ -67,25 +50,6 @@ export function AppSidebar() {
     chatId: null,
     chatTitle: "",
   });
-
-  // ⏰ IST Clock
-  const [time, setTime] = useState("");
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      const options: Intl.DateTimeFormatOptions = {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-        timeZone: "Asia/Kolkata",
-      };
-      setTime(new Intl.DateTimeFormat("en-IN", options).format(now));
-    };
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const fetchChatsData = useCallback(async () => {
     // Wait for auth to complete loading
@@ -98,11 +62,9 @@ export function AppSidebar() {
     if (!user || !user.id) {
       console.log("❌ No user available, clearing chats", { user, userId: user?.id });
       setAllChats([]);
-      setIsLoadingChats(false);
       return;
     }
     
-    setIsLoadingChats(true);
     try {
       console.log("🔄 Fetching chats for user:", user.id);
       const chatsData = await getChatsByUserId(user.id);
@@ -119,8 +81,6 @@ export function AppSidebar() {
     } catch (error) {
       console.error("❌ Error fetching chats:", error);
       setAllChats([]);
-    } finally {
-      setIsLoadingChats(false);
     }
   }, [user, isLoading]);
 
@@ -147,26 +107,6 @@ export function AppSidebar() {
     };
   }, []);
 
-  const handleRefreshChats = async () => {
-    setIsRefreshing(true);
-    try {
-      await fetchChatsData();
-      // addToast({
-      //   type: "success",
-      //   message: "Chats refreshed successfully",
-      //   duration: 1500,
-      // });
-    } catch (error) {
-      console.error("Error refreshing chats:", error);
-      addToast({
-        type: "error",
-        message: "Failed to refresh chats",
-        duration: 3500,
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   const toggleFavorite = (chatId: string) => {
     const updatedChats = allChats.map((chat) =>
@@ -178,52 +118,21 @@ export function AppSidebar() {
   };
 
   const handleDeleteChat = async (chatId: string) => {
-    try {
-      // Ensure token is available
-      if (!token) {
-        addToast({
-          type: "error",
-          message: "Authentication required. Please log in.",
-          duration: 3000,
-        });
-        return;
-      }
-      // Call API to delete chat from database
-      await deleteChat(chatId, token);
+    setAllChats((prevChats) => prevChats.filter((c) => c.id !== chatId));
+    addToast({
+      type: "success",
+      message: "Chat removed from sidebar",
+      duration: 2000,
+    });
+    setDeleteDialog({ isOpen: false, chatId: null, chatTitle: "" });
+  };
 
-      // Remove from UI state
-      setAllChats(allChats.filter((c) => c.id !== chatId));
-
-      // Show success toast
-      addToast({
-        type: "success",
-        message: "Chat deleted successfully",
-        duration: 2000,
-      });
-
-      // Close dialog
-      setDeleteDialog({ isOpen: false, chatId: null, chatTitle: "" });
-    } catch (error) {
-      console.error("Error deleting chat:", error);
-      addToast({
-        type: "error",
-        message: "Failed to delete chat. Please try again.",
-        duration: 3000,
-      });
-    }
+  const handleNewChat = () => {
+    navigate("/chats/new");
   };
 
   const filterChats = (chats: IChat[]) => {
-    return chats.filter((chat) => {
-      // Handle null/undefined title
-      const chatTitle = chat.title || "";
-      const matchesSearch = chatTitle
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      // Show non-archived chats by default, or archived if toggled
-      const matchesArchived = showArchived ? chat.isArchived : !chat.isArchived;
-      return matchesSearch && matchesArchived;
-    });
+    return chats.filter((chat) => !chat.isArchived);
   };
 
   const truncateTitle = (title: string, maxLength: number = 18) => {
@@ -237,54 +146,31 @@ export function AppSidebar() {
     return cleanTitle;
   };
 
-  const handleNewChat = () => {
-    if (!user) {
-      addToast({
-        message: "Please Sign In to chat with me! Have a good day!",
-        type: "info",
-        duration: 3000,
-      });
-      return;
-    }
-    navigate("/chats/new");
-  };
-
   const favorites = allChats.filter((c) => c.isFavorite);
   const filteredChats = filterChats(allChats);
-  
-  // Log state changes (not on every render)
-  useEffect(() => {
-    console.log("🎯 Sidebar state CHANGED:", {
-      allChatsCount: allChats.length,
-      favoritesCount: favorites.length,
-      filteredChatsCount: filteredChats.length,
-      searchQuery,
-      showArchived,
-      allChats: allChats.map(c => ({ id: c.id, title: c.title, isArchived: c.isArchived, isFavorite: c.isFavorite }))
-    });
-  }, [allChats, favorites.length, filteredChats.length, searchQuery, showArchived]);
 
   const renderChatItem = (chat: IChat) => (
     <SidebarMenuItem key={chat.id}>
-      <div className="flex justify-between items-center group h-10 w-full">
-        <NavLink to={`chats/${chat.id}`} className="flex-1 h-full min-w-0">
+      <div className="flex items-center gap-2 group w-full min-h-[2.75rem]">
+        <NavLink to={`chats/${chat.id}`} className="flex-1 min-w-0">
           {({ isActive }) => (
             <SidebarMenuButton
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg transition cursor-pointer text-sm font-medium h-full w-full",
+                "flex items-center gap-2 px-2.5 py-2 rounded-lg transition cursor-pointer text-[13px] sm:text-sm font-medium h-10 w-full",
                 isActive 
                   ? "bg-gradient-to-r from-primary/40 to-accent/40 text-primary border border-primary/40 shadow-md shadow-primary/20" 
                   : "hover:bg-primary/20 hover:border-primary/30 border border-transparent"
               )}
             >
-              <MessageSquare className="w-4 h-4 flex-shrink-0 text-primary/70" />
-              <span className="truncate" title={chat.title}>
-                {truncateTitle(chat.title)}
+              <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-primary/70" />
+              <span className="truncate leading-4" title={chat.title}>
+                {truncateTitle(chat.title, window.innerWidth < 640 ? 16 : 18)}
               </span>
             </SidebarMenuButton>
           )}
         </NavLink>
-        <div className="flex items-center justify-center gap-0.5 h-full px-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+
+        <div className="flex items-center justify-center gap-0.5 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
           {/* Delete Button */}
           <button
             onClick={(e) => {
@@ -299,7 +185,7 @@ export function AppSidebar() {
             title="Delete chat"
             aria-label="Delete chat"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
 
           {/* Favorite/Star Button */}
@@ -316,7 +202,7 @@ export function AppSidebar() {
           >
             <Star
               className={cn(
-                "w-4 h-4",
+                "w-3.5 h-3.5 sm:w-4 sm:h-4",
                 chat.isFavorite
                   ? "fill-accent text-accent"
                   : "text-muted-foreground/50 hover:text-accent"
@@ -332,47 +218,14 @@ export function AppSidebar() {
     <Sidebar className="bg-gradient-to-b from-background to-secondary/5 text-foreground border-r border-primary/20">
       <SidebarContent className="flex flex-col h-full p-0">
         <div className="space-y-4 overflow-y-auto flex-1 px-0">
-          {/* ⏰ IST Clock */}
-          <div className="px-4 pt-4 pb-2 text-center">
-            <div className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent flex items-center justify-center gap-2 pr-8">
-              <span className="animate-pulse text-lg">🕒</span>
-              {time} IST
-            </div>
-          </div>
-
-          {/* New Chat Button */}
-          <div className="px-4">
-            <Button
-              variant="default"
+          <div className="px-4 pt-4">
+            <button
+              type="button"
               onClick={handleNewChat}
-              className="w-full justify-start cursor-pointer gap-2 bg-gradient-to-r from-primary to-accent hover:shadow-xl hover:shadow-primary/40 transition-all text-white font-semibold"
+              className="w-full rounded-xl bg-gradient-to-r from-primary to-accent px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition hover:opacity-95"
             >
-              <MessageSquarePlus className="w-4 h-4" />
               New Chat
-            </Button>
-          </div>
-
-          {/* Search Bar */}
-          <div className="px-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search chats..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-10 text-sm rounded-lg border-primary/30"
-                aria-label="Search chats"
-              />
-              <button
-                onClick={handleRefreshChats}
-                disabled={isRefreshing}
-                className="absolute right-3 top-3 text-muted-foreground hover:text-primary transitions-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                title="Refresh chats"
-                aria-label="Refresh chats"
-              >
-                <RotateCcw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
-              </button>
-            </div>
+            </button>
           </div>
 
           {/* Favorites Section */}
@@ -404,80 +257,6 @@ export function AppSidebar() {
             </SidebarGroup>
           )}
 
-          {filteredChats.length === 0 && favorites.length === 0 && (
-            <div className="px-4 py-8 text-center">
-              {isLoading || isLoadingChats ? (
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
-                  <p className="text-sm text-muted-foreground">Loading chats...</p>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No chats found</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Footer Actions - Sticky to bottom */}
-        <div className="sticky bottom-0 left-0 right-0 px-4 py-3 border-t border-primary/20 bg-gradient-to-t from-primary/5 to-transparent space-y-2 z-10">
-          {/* About and Show Archived Side-by-Side */}
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 gap-2 text-xs hover:bg-primary/20 transition-all border border-primary/30"
-              asChild
-            >
-              <Link to="/about">
-                <Bot className="h-4 w-4" />
-                <span>About</span>
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 gap-2 text-xs hover:bg-primary/20 transition-all border border-primary/30"
-              onClick={() => setShowArchived(!showArchived)}
-            >
-              <Archive className="h-4 w-4" />
-              {showArchived ? "Hide" : "Archived"}
-            </Button>
-          </div>
-          <div className="flex items-center justify-between bg-gradient-to-r from-primary/30 to-accent/30 hover:from-primary/40 hover:to-accent/40 px-3 py-2 rounded-lg transition text-xs font-semibold border border-primary/40 shadow-md shadow-primary/10">
-            <span className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-primary" />
-              Developer
-            </span>
-            <div className="flex items-center gap-2">
-              <a
-                href="https://sujaykumarmondal.github.io/portfolio/" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1.5 rounded hover:bg-primary/20 transition"
-                title="Portfolio"
-              >
-                <Globe className="w-3.5 h-3.5 text-white" />
-              </a>
-              <a
-                href="https://www.linkedin.com/in/sujay-kumar-mondal-a125481b7/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1.5 rounded hover:bg-primary/20 transition"
-                title="LinkedIn"
-              >
-                <Linkedin className="w-3.5 h-3.5 text-white" />
-              </a>
-              <a
-                href="https://github.com/SujayKumarMondal"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1.5 rounded hover:bg-primary/20 transition"
-                title="GitHub"
-              >
-                <Github className="w-3.5 h-3.5 text-white" />
-              </a>
-            </div>
-          </div>
         </div>
       </SidebarContent>
 

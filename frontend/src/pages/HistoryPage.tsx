@@ -161,8 +161,8 @@ export default function HistoryPage() {
           <h1 className="text-2xl font-bold text-foreground mb-4">
             Please log in to view history
           </h1>
-          <Button onClick={() => navigate("/signin")} className="rounded-full">
-            Sign In
+          <Button onClick={() => navigate("/")} className="rounded-full">
+            Continue with Google
           </Button>
         </div>
       </div>

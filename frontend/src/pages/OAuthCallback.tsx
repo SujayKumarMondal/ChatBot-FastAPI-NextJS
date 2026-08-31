@@ -15,18 +15,19 @@ const OAuthCallback = () => {
     exchangeAttemptedRef.current = true;
 
     const code = searchParams.get('code');
+    const provider = 'google';
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
 
     if (error) {
       console.error('OAuth error:', error, errorDescription);
-      navigate('/signin', { state: { error: errorDescription || error } });
+      navigate('/', { replace: true, state: { error: errorDescription || error } });
       return;
     }
 
     if (!code) {
       console.error('No authorization code received');
-      navigate('/signin', { state: { error: 'No authorization code received' } });
+      navigate('/', { replace: true, state: { error: 'No authorization code received' } });
       return;
     }
 
@@ -42,7 +43,7 @@ const OAuthCallback = () => {
           );
         }
 
-        const response = await fetch(`${apiBaseUrl}/api/auth/google/exchange/`, {
+        const response = await fetch(`${apiBaseUrl}/api/auth/${provider}/exchange/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -64,23 +65,24 @@ const OAuthCallback = () => {
         }
 
         const data = await response.json();
-        
-        // Store token in sessionStorage FIRST (synchronous, reliable)
+        const userWithProvider = {
+          ...data.user,
+          oauth_provider: provider,
+          image: data.user?.image || "",
+        };
+
         sessionStorage.setItem("access_token", data.access);
         sessionStorage.setItem("refresh_token", data.refresh);
-        sessionStorage.setItem("user", JSON.stringify(data.user));
-        
-        // Then call signInWithTokens to update React state
-        signInWithTokens(data.access, data.refresh, data.user);
-        
-        // Navigate after a small delay to ensure sessionStorage is read by AppSidebar
-        // AppSidebar will also check sessionStorage as fallback
+        sessionStorage.setItem("user", JSON.stringify(userWithProvider));
+
+        signInWithTokens(data.access, data.refresh, userWithProvider);
+
         setTimeout(() => {
-          navigate('/');
+          window.location.href = "/";
         }, 50);
       } catch (err: any) {
         console.error('Token exchange failed:', err);
-        navigate('/signin', { state: { error: err.message } });
+        navigate('/', { replace: true, state: { error: err.message } });
       }
     };
 

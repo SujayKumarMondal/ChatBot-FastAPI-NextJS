@@ -1,17 +1,11 @@
 import { useEffect, useState } from "react";
-import { AlertCircle } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 export default function SignInPage() {
-  const { signIn } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
-  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -21,24 +15,23 @@ export default function SignInPage() {
     }
   }, [location.state]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await signIn(form.email, form.password);
-      navigate("/");
-    } catch (err: any) {
-      setError(err.message);
+  const startOAuth = () => {
+    const clientId = GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      setError("Google Sign-In is not configured.");
+      return;
     }
+    const redirectUri = `${window.location.origin}/oauth-callback`;
+    const params = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri, response_type: "code", state: "google" });
+    params.set("scope", "openid email profile");
+    params.set("access_type", "offline");
+    params.set("prompt", "select_account");
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary/10">
-      <form
-        onSubmit={handleSubmit}
+      <div
         className="relative bg-gradient-to-br from-card to-card/80 border border-primary/20 p-8 rounded-2xl shadow-xl shadow-primary/20 w-full max-w-md space-y-6"
       >
         {/* Logo Header */}
@@ -58,80 +51,15 @@ export default function SignInPage() {
 
         {error && <p className="text-destructive text-sm bg-destructive/10 p-3 rounded-lg">{error}</p>}
 
-        <Input
-          name="email"
-          type="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          name="password"
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          required
-        />
-
-          <p className="text-right text-xs mt-1">
-            <span
-              className="text-primary cursor-pointer hover:underline"
-              onClick={() => navigate("/forgot-password")}
-            >
-              Forgot Password?
-            </span>
-          </p>
-
-        <Button type="submit" className="w-full">Sign In</Button>
-
         <Button
           type="button"
           variant="secondary"
           className="w-full mt-2"
-          onClick={() => {
-            if (!GOOGLE_CLIENT_ID) {
-              const message =
-                "Google Sign-In is not configured. VITE_GOOGLE_CLIENT_ID is missing.";
-              console.error(message);
-              setError(message);
-              return;
-            }
-
-            const redirectUri = `${window.location.origin}/oauth-callback`;
-            console.log("🔐 Google OAuth Starting:");
-            console.log("  Client ID:", GOOGLE_CLIENT_ID);
-            console.log("  Redirect URI:", redirectUri);
-            const params = new URLSearchParams({
-              client_id: GOOGLE_CLIENT_ID,
-              redirect_uri: redirectUri,
-              response_type: "code",
-              scope: "openid email profile",
-              access_type: "offline",
-              prompt: "select_account",
-            });
-            window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-          }}
+          onClick={startOAuth}
         >
           Sign In with Google
         </Button>
-        <div className="space-y-2 text-center">
-          <p className="text-sm">
-            Don’t have an account?{" "}
-            <span
-              className="text-primary cursor-pointer"
-              onClick={() => navigate("/register")}
-            >
-              Register
-            </span>
-          </p>
-          <div className="flex items-center justify-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300">
-            <AlertCircle className="h-3.5 w-3.5" />
-            <span>Forgot password is temporarily unavailable.</span>
-          </div>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }
