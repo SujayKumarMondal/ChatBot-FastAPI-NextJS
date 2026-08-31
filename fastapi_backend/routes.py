@@ -51,13 +51,6 @@ def get_google_oauth_config() -> tuple[str, str]:
     return client_id, client_secret
 
 
-def get_github_oauth_config() -> tuple[str, str]:
-    client_id = (os.getenv("GITHUB_CLIENT_ID") or "").strip()
-    client_secret = (os.getenv("GITHUB_CLIENT_SECRET") or "").strip()
-    if not client_id or not client_secret:
-        raise RuntimeError("GitHub OAuth client ID/secret are not configured.")
-    return client_id, client_secret
-
 # Groq API settings
 DEFAULT_GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b"
@@ -400,59 +393,9 @@ def google_exchange(req: GoogleExchangeRequest, db: Session = Depends(get_db)):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "image": user.image,
+            "oauth_provider": "google",
         }
     }
-
-
-class GithubExchangeRequest(BaseModel):
-    code: str
-    redirect_uri: Optional[str] = None
-
-
-@router.post("/api/auth/github/exchange/", tags=["Authentication"])
-def github_exchange(req: GithubExchangeRequest, db: Session = Depends(get_db)):
-    try:
-        client_id, client_secret = get_github_oauth_config()
-        token_response = requests.post(
-            "https://github.com/login/oauth/access_token",
-            headers={"Accept": "application/json"},
-            data={"client_id": client_id, "client_secret": client_secret, "code": req.code},
-            timeout=10,
-        )
-        token_response.raise_for_status()
-        access_token = token_response.json().get("access_token")
-        if not access_token:
-            raise ValueError("No access token returned from GitHub")
-        headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/vnd.github+json"}
-        info = requests.get("https://api.github.com/user", headers=headers, timeout=10).json()
-        email_response = requests.get("https://api.github.com/user/emails", headers=headers, timeout=10)
-        email_response.raise_for_status()
-        emails = email_response.json()
-        email = next((item["email"] for item in emails if item.get("primary") and item.get("verified")), None)
-        if not email:
-            raise ValueError("GitHub did not return a verified primary email")
-        subject = str(info.get("id"))
-        name = info.get("name") or info.get("login") or ""
-        user = db.query(CustomUser).filter(CustomUser.oauth_provider == "github", CustomUser.oauth_subject == subject).first()
-        if not user:
-            user = db.query(CustomUser).filter(func.lower(CustomUser.email) == _normalize_email(email)).first()
-        if not user:
-            user = CustomUser(username=_ensure_unique_username(db, info.get("login", email.split("@")[0])), email=email,
-                              first_name=name, image=info.get("avatar_url"), oauth_provider="github", oauth_subject=subject)
-            db.add(user)
-        else:
-            user.oauth_provider = user.oauth_provider or "github"
-            user.oauth_subject = user.oauth_subject or subject
-            user.first_name = name or user.first_name
-            user.image = info.get("avatar_url") or user.image
-        db.commit()
-        db.refresh(user)
-    except (requests.RequestException, ValueError, RuntimeError) as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"GitHub sign-in failed: {exc}")
-
-    return {"access": create_access_token({"sub": str(user.id)}), "refresh": create_refresh_token({"sub": str(user.id)}),
-            "user": {"id": user.id, "username": user.username, "email": user.email, "first_name": user.first_name,
-                      "last_name": user.last_name, "image": user.image}}
 
 
 # ======================= Token Refresh & Logout Endpoints =======================

@@ -39,7 +39,7 @@ def custom_openapi():
     }
     
     # Add security requirement to all endpoints except OAuth exchanges and refresh
-    public_endpoints = ["/api/auth/google/exchange/", "/api/auth/github/exchange/", "/api/refresh-token/"]
+    public_endpoints = ["/api/auth/google/exchange/", "/api/refresh-token/"]
     
     for path, path_item in openapi_schema.get("paths", {}).items():
         for operation in path_item.values():

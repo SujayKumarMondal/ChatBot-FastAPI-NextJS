@@ -16,6 +16,7 @@ interface User {
   image?: string;
   first_name?: string;
   last_name?: string;
+  oauth_provider?: "google";
 }
 
 interface AuthContextType {
@@ -71,17 +72,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 🔹 Sign In With Tokens (used by OAuth callback)
   const signInWithTokens = (access: string, refresh: string, userProfile: User) => {
-    // Store tokens immediately
     sessionStorage.setItem("access_token", access);
     sessionStorage.setItem("refresh_token", refresh);
-    
-    // Update state - store immediately in sessionStorage first to ensure persistence
+
     const profileWithStoredImage = {
       ...userProfile,
-      image: userProfile.image,
+      image: userProfile.image || "",
+      oauth_provider: userProfile.oauth_provider || "google",
     };
-    
-    // Update all state synchronously
+
     setToken(access);
     setUser(profileWithStoredImage);
     sessionStorage.setItem("user", JSON.stringify(profileWithStoredImage));

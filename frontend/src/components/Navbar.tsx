@@ -26,6 +26,7 @@ export default function Navbar() {
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [showDeveloperMenu, setShowDeveloperMenu] = useState(false);
 
+  const avatarSrc = user?.image && /^https?:\/\//i.test(user.image) ? user.image : "";
   const isDark = currentTheme === "dark" || currentTheme !== "light";
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function Navbar() {
   const handleSignOutConfirm = () => {
     setShowSignOutDialog(false);
     signOut();
+    window.location.href = window.location.origin || "http://localhost:5173";
   };
 
   return (
@@ -269,10 +271,20 @@ export default function Navbar() {
                     tabIndex={0}
                     aria-label="Open profile"
                   >
-                    <AvatarImage
-                      src={user.image}
-                      alt={user.username}
-                    />
+                    {avatarSrc ? (
+                      <img
+                        src={avatarSrc}
+                        alt={user.username}
+                        className="h-full w-full object-cover"
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                        onError={(event) => {
+                          const target = event.currentTarget as HTMLImageElement;
+                          target.style.display = "none";
+                          target.parentElement?.setAttribute("data-fallback", "true");
+                        }}
+                      />
+                    ) : null}
 
                     <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
                       {user.first_name

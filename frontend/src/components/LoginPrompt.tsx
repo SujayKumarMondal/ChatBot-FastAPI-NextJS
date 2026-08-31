@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Chrome, Github } from "lucide-react";
+import { Chrome } from "lucide-react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
-const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID || "";
 
 export default function LoginPrompt() {
   const location = useLocation();
@@ -17,10 +16,10 @@ export default function LoginPrompt() {
     }
   }, [location.state]);
 
-  const startOAuth = (provider: "google" | "github") => {
-    const clientId = provider === "google" ? GOOGLE_CLIENT_ID : GITHUB_CLIENT_ID;
+  const startOAuth = () => {
+    const clientId = GOOGLE_CLIENT_ID;
     if (!clientId) {
-      setError(`${provider === "google" ? "Google" : "GitHub"} Sign-In is not configured.`);
+      setError("Google Sign-In is not configured.");
       return;
     }
 
@@ -29,19 +28,13 @@ export default function LoginPrompt() {
       client_id: clientId,
       redirect_uri: redirectUri,
       response_type: "code",
-      state: provider,
+      state: "google",
     });
 
-    if (provider === "google") {
-      params.set("scope", "openid email profile");
-      params.set("access_type", "offline");
-      params.set("prompt", "select_account");
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-      return;
-    }
-
-    params.set("scope", "read:user user:email");
-    window.location.href = `https://github.com/login/oauth/authorize?${params}`;
+    params.set("scope", "openid email profile");
+    params.set("access_type", "offline");
+    params.set("prompt", "select_account");
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
   };
 
   return (
@@ -75,21 +68,11 @@ export default function LoginPrompt() {
         <div className="flex flex-col gap-3">
           <Button
             type="button"
-            onClick={() => startOAuth("google")}
+            onClick={startOAuth}
             className="w-full bg-primary py-3 text-sm text-primary-foreground hover:bg-primary/90 sm:text-base"
           >
             <Chrome className="mr-2 h-4 w-4" />
             Sign In With Google
-          </Button>
-
-          <Button
-            type="button"
-            onClick={() => startOAuth("github")}
-            variant="outline"
-            className="w-full py-3 text-sm sm:text-base"
-          >
-            <Github className="mr-2 h-4 w-4" />
-            Sign In With Github
           </Button>
         </div>
       </div>

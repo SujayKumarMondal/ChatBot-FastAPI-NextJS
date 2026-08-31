@@ -15,7 +15,7 @@ const OAuthCallback = () => {
     exchangeAttemptedRef.current = true;
 
     const code = searchParams.get('code');
-    const provider = searchParams.get('state') === 'github' ? 'github' : 'google';
+    const provider = 'google';
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
 
@@ -65,19 +65,20 @@ const OAuthCallback = () => {
         }
 
         const data = await response.json();
-        
-        // Store token in sessionStorage FIRST (synchronous, reliable)
+        const userWithProvider = {
+          ...data.user,
+          oauth_provider: provider,
+          image: data.user?.image || "",
+        };
+
         sessionStorage.setItem("access_token", data.access);
         sessionStorage.setItem("refresh_token", data.refresh);
-        sessionStorage.setItem("user", JSON.stringify(data.user));
-        
-        // Then call signInWithTokens to update React state
-        signInWithTokens(data.access, data.refresh, data.user);
-        
-        // Navigate after a small delay to ensure sessionStorage is read by AppSidebar
-        // AppSidebar will also check sessionStorage as fallback
+        sessionStorage.setItem("user", JSON.stringify(userWithProvider));
+
+        signInWithTokens(data.access, data.refresh, userWithProvider);
+
         setTimeout(() => {
-          navigate('/');
+          window.location.href = "/";
         }, 50);
       } catch (err: any) {
         console.error('Token exchange failed:', err);
