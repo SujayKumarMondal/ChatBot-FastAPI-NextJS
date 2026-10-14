@@ -564,7 +564,7 @@ def prompt_gpt(
 ```python
 headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
 payload = {
-    "model": "llama-3.1-8b-instant",
+    "model": "openai/gpt-oss-20b",
     "messages": [
         {"role": "system", "content": "You are helpful assistant"},
         {"role": "user", "content": user_message},
@@ -887,7 +887,7 @@ def create_chat_title(user_message: str) -> str:
     try:
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
         payload = {
-            "model": "llama-3.1-8b-instant",
+            "model": "openai/gpt-oss-20b",
             "messages": [
                 {
                     "role": "system",

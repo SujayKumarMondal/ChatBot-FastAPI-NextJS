@@ -87,7 +87,7 @@ flowchart TD
     R --> S
     
     S --> T[Build Message Context]
-    T --> U[Call Groq API: llama-3.1-8b-instant]
+    T --> U[Call Groq API: openai/gpt-oss-20b]
     U --> V{API Success?}
     V -->|No| W[Return 500 Error]
     W --> X[Show Error in ChatUI]
@@ -342,7 +342,7 @@ flowchart TD
     I --> J["[system, ..., user msg n-1, assistant msg n-1, user msg n]"]
     
     J --> K[POST to Groq API]
-    K --> L[Call: llama-3.1-8b-instant model]
+    K --> L[Call: openai/gpt-oss-20b model]
     L --> M[Groq Processes Context Window]
     M --> N[Generate Response Tokens]
     
@@ -391,7 +391,7 @@ flowchart TD
     A[ChatPaat Backend] -->|Send Request| B[Groq API]
     
     B --> C[Request Format]
-    C --> D["model: llama-3.1-8b-instant"]
+    C --> D["model: openai/gpt-oss-20b"]
     C --> E["messages: [...]"]
     C --> F["max_tokens: 1024"]
     C --> G["temperature: 0.7"]

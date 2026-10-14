@@ -165,7 +165,7 @@ CustomUser (Users) ─────┐
 ### 4. **External Services Integration**
 
 #### A. **Groq API** (AI/LLM Service)
-- **Model**: llama-3.1-8b-instant
+- **Model**: openai/gpt-oss-20b
 - **Purpose**: Generate AI responses to user messages
 - **Integration**: Used in `prompt_gpt()` endpoint
 - **Response Format**: JSON with `choices[0].message.content`

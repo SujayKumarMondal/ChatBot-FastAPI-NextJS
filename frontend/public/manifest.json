@@ -1,23 +1,84 @@
 {
-  "name": "ChatPaat - Your AI conversational partner",
+  "name": "ChatPaat - Your AI Conversational Partner",
   "short_name": "ChatPaat",
-  "description": "ChatPaat is an AI-powered chatbot designed to make your interactions smarter, faster, and more engaging.",
+  "description": "ChatPaat is an advanced AI-powered chatbot platform designed to make your interactions smarter, faster, and more engaging with real-time Groq AI responses.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#0066FF",
+  "theme_color": "#0f172a",
+  "categories": ["productivity", "utilities"],
   "icons": [
     {
       "src": "/brand_logo.png",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "/brand_logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand_logo.png",
       "sizes": "256x256",
-      "type": "image/svg+xml",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/brand_logo.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/brand_logo.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Chat",
+      "short_name": "Chat",
+      "description": "Start a new conversation with AI",
+      "url": "/?mode=new-chat",
+      "icons": [
+        {
+          "src": "/brand_logo.png",
+          "sizes": "192x192",
+          "purpose": "any maskable"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": ["*/*"]
+        }
+      ]
+    }
+  }
 }
+

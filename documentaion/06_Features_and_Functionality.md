@@ -32,7 +32,7 @@ ChatPaat provides a comprehensive set of features for intelligent conversations 
 
 // Backend
 - /prompt_gpt/ endpoint receives chat_id and content
-- Call Groq API: llama-3.1-8b-instant model
+- Call Groq API: openai/gpt-oss-20b model
 - Store user message and AI response in database
 - Return response to frontend
 ```

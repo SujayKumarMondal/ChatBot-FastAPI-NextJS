@@ -5,22 +5,25 @@ from datetime import datetime, timedelta
 import requests
 import base64
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, logger, status, Header, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, logger, status, Header, UploadFile, File, Query
 from fastapi.responses import FileResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 import hashlib
+from dotenv import load_dotenv
 
 # from win32comext import authorization
-from auth import SECRET_KEY
 from datetime import timezone
-import secrets, hashlib
+
+BACKEND_DIR = Path(__file__).resolve().parent
+load_dotenv(BACKEND_DIR / ".env")
 
 from db import get_db
-from models import CustomUser, Chat, ChatMessage, UserSearchHistory, PasswordResetToken
+from models import CustomUser, Chat, ChatMessage, UserSearchHistory
 from auth import (
-    hash_password, verify_password, create_access_token,
+    create_access_token,
     create_refresh_token, verify_token, SECRET_KEY
 )
 
@@ -32,113 +35,56 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
-# Google OAuth settings
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+# OAuth settings
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+
+def get_google_oauth_config() -> tuple[str, str]:
+    """Resolve Google OAuth credentials from environment variables."""
+    load_dotenv(BACKEND_DIR / ".env", override=False)
+    client_id = (os.getenv("GOOGLE_CLIENT_ID") or "").strip()
+    client_secret = (os.getenv("GOOGLE_CLIENT_SECRET") or "").strip()
+
+    if not client_id or not client_secret:
+        raise RuntimeError("Google OAuth client ID/secret are not configured.")
+
+    return client_id, client_secret
+
+
 # Groq API settings
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_API_URL = os.getenv("GROQ_API_URL")
-from email_utils import send_email
+DEFAULT_GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b"
+
+
+def get_groq_config() -> tuple[str, str]:
+    """Resolve Groq credentials from environment variables with safe defaults."""
+    load_dotenv(BACKEND_DIR / ".env", override=False)
+
+    groq_api_key = (os.getenv("GROQ_API_KEY") or "").strip()
+    groq_api_url = (os.getenv("GROQ_API_URL") or DEFAULT_GROQ_API_URL).strip()
+
+    if not groq_api_key:
+        raise RuntimeError("GROQ_API_KEY is not configured.")
+
+    if not groq_api_url.startswith(("http://", "https://")):
+        groq_api_url = DEFAULT_GROQ_API_URL
+
+    return groq_api_key, groq_api_url
+
+
+def get_groq_model() -> str:
+    return (os.getenv("GROQ_MODEL") or DEFAULT_GROQ_MODEL).strip()
+
+
+def _normalize_email(email: str) -> str:
+    return (email or "").strip().lower()
+
 
 # ======================= Router =======================
 router = APIRouter()
 
 # ======================= Request Schemas =======================
-class PasswordResetRequest(BaseModel):
-    email: str
-
-class PasswordResetConfirm(BaseModel):
-    token: str
-    new_password: str
-
-class ChangePasswordRequest(BaseModel):
-    old_password: str
-    new_password: str
-
-# ======================= Password Management Endpoints =======================
-@router.post("/api/auth/password-reset/", tags=["Authentication"])
-def password_reset(req: PasswordResetRequest, db: Session = Depends(get_db)):
-    """
-    Initiate password reset by sending a reset link to user's email.
-    
-    - **email**: User's email address
-    - Returns: Success message if email exists, silent if not
-    """
-    user = db.query(CustomUser).filter(CustomUser.email == req.email).first()
-    if user:
-        token = secrets.token_urlsafe(48)
-        token_hash = hashlib.sha256((token + SECRET_KEY).encode()).hexdigest()
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
-        prt = PasswordResetToken(user_id=user.id, token_hash=token_hash, expires_at=expires_at, used=False)
-        db.add(prt)
-        db.commit()
-        reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
-        subject = "Password reset instructions"
-        body = f"Hello {user.username},\n\nWe received a request to reset your password. If you requested this, open the link below to set a new password:\n\n{reset_link}\n\nIf you didn't request this, you can safely ignore this email.\n\nThis link will expire in 1 hour."
-        try:
-            # Use SendGrid integration for email delivery
-            send_email(user.email, subject, body)
-        except Exception as e:
-            print(f"[password_reset] failed to send email: {e}")
-    return {"detail": "If an account with that email exists, instructions have been sent."}
-
-@router.post("/api/auth/password-reset/confirm/", tags=["Authentication"])
-def password_reset_confirm(req: PasswordResetConfirm, db: Session = Depends(get_db)):
-    """
-    Confirm password reset using token and set new password.
-    
-    - **token**: Password reset token from email link
-    - **new_password**: New password to set
-    - Returns: Success or error if token is invalid/expired
-    """
-    token_hash = hashlib.sha256((req.token + SECRET_KEY).encode()).hexdigest()
-    now = datetime.now(timezone.utc)
-    prt = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash, PasswordResetToken.used == False, PasswordResetToken.expires_at > now).first()
-    if not prt:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
-    user = db.query(CustomUser).filter(CustomUser.id == prt.user_id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
-    user.password = hash_password(req.new_password)
-    prt.used = True
-    db.add(user)
-    db.add(prt)
-    db.commit()
-    return {"detail": "Password has been reset. You can now sign in with your new password."}
-
-@router.post("/api/profile/change-password/", tags=["Profile"])
-def change_password(password_data: ChangePasswordRequest, authorization: str = Header(None), db: Session = Depends(get_db)):
-    """
-    Change password for authenticated user.
-    
-    - **old_password**: Current password
-    - **new_password**: New password to set
-    - **authorization**: Bearer token from header
-    - Returns: Success or error if old password is incorrect
-    """
-    user = get_current_user(authorization, db)
-    if not verify_password(password_data.old_password, user.password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is incorrect")
-    if password_data.new_password == password_data.old_password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password must be different from old password")
-    user.password = hash_password(password_data.new_password)
-    db.commit()
-    return {"message": "Password changed successfully"}
-
-
 # ======================= Pydantic Schemas =======================
-
-class UserRegister(BaseModel):
-    username: str
-    email: str
-    password: str
-
-
-class UserLogin(BaseModel):
-    email: str
-    password: str
 
 
 class PromptRequest(BaseModel):
@@ -192,12 +138,6 @@ class UpdateChatTitleRequest(BaseModel):
 
 
 
-# ======================= ChangePasswordRequest Model =======================
-class ChangePasswordRequest(BaseModel):
-    old_password: str
-    new_password: str
-
-
 # ======================= Helper Functions =======================
 
 def get_current_user(token: str, db: Session) -> CustomUser:
@@ -236,9 +176,10 @@ def get_current_user(token: str, db: Session) -> CustomUser:
 def create_chat_title(user_message: str) -> str:
     """Create a short title for the chat using Groq"""
     try:
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        groq_api_key, groq_api_url = get_groq_config()
+        headers = {"Authorization": f"Bearer {groq_api_key}"}
         payload = {
-            "model": "llama-3.1-8b-instant",
+            "model": get_groq_model(),
             "messages": [
                 {
                     "role": "system",
@@ -252,7 +193,7 @@ def create_chat_title(user_message: str) -> str:
             "max_tokens": 16,
             "temperature": 0.2,
         }
-        response = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=30)
+        response = requests.post(groq_api_url, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         data = response.json()
         title = data["choices"][0]["message"]["content"].strip()
@@ -325,90 +266,7 @@ def user_search(
 
 # ======================= Authentication Endpoints =======================
 
-@router.post("/api/register/", tags=["Authentication"])
-def register(user_data: UserRegister, db: Session = Depends(get_db)):
-    """
-    Register a new user
-    """
-    # Check if username already exists
-    existing_user = db.query(CustomUser).filter(CustomUser.username == user_data.username).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists."
-        )
-    
-    # Check if email already exists
-    existing_email = db.query(CustomUser).filter(CustomUser.email == user_data.email).first()
-    if existing_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already exists."
-        )
-    
-    # Create new user
-    new_user = CustomUser(
-        username=user_data.username,
-        email=user_data.email,
-        password=hash_password(user_data.password)
-    )
-    
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    # Create tokens
-    access_token = create_access_token({"sub": str(new_user.id)})
-    refresh_token = create_refresh_token({"sub": str(new_user.id)})
-    
-    return {
-        "access": access_token,
-        "refresh": refresh_token,
-        "user": {
-            "id": new_user.id,
-            "username": new_user.username,
-            "email": new_user.email
-        }
-    }
-
-
-@router.post("/api/login/", tags=["Authentication"])
-def login(user_data: UserLogin, db: Session = Depends(get_db)):
-    """
-    Login user and return JWT tokens
-    """
-    # Find user by email
-    user = db.query(CustomUser).filter(CustomUser.email == user_data.email).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid credentials"
-        )
-    
-    # Verify password
-    if not verify_password(user_data.password, user.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid credentials"
-        )
-    
-    # Create tokens
-    access_token = create_access_token({"sub": str(user.id)})
-    refresh_token = create_refresh_token({"sub": str(user.id)})
-    
-    return {
-        "access": access_token,
-        "refresh": refresh_token,
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email
-        }
-    }
-
-
-# ======================= Google OAuth Endpoints =======================
+# ======================= OAuth Endpoints =======================
 
 
 def _ensure_unique_username(db: Session, base_username: str) -> str:
@@ -420,12 +278,13 @@ def _ensure_unique_username(db: Session, base_username: str) -> str:
     return username
 
 
-def _exchange_code_for_tokens(code: str, redirect_uri: str) -> dict:
+def _exchange_google_code(code: str, redirect_uri: str) -> dict:
     token_url = "https://oauth2.googleapis.com/token"
+    client_id, client_secret = get_google_oauth_config()
     data = {
         "code": code,
-        "client_id": GOOGLE_CLIENT_ID,
-        "client_secret": GOOGLE_CLIENT_SECRET,
+        "client_id": client_id,
+        "client_secret": client_secret,
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
     }
@@ -461,14 +320,17 @@ def google_exchange(req: GoogleExchangeRequest, db: Session = Depends(get_db)):
     and return local JWT tokens.
     Frontend should send the `code` it received and the `redirect_uri` used.
     """
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+    try:
+        get_google_oauth_config()
+    except RuntimeError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Google OAuth client ID/secret not configured")
+                            detail=str(e))
 
     redirect_uri = req.redirect_uri or f"{FRONTEND_URL}/oauth-callback"
+    print(f"[google_exchange] Received code; redirect_uri={redirect_uri}")
 
     try:
-        token_data = _exchange_code_for_tokens(req.code, redirect_uri)
+        token_data = _exchange_google_code(req.code, redirect_uri)
     except Exception as e:
         error_msg = f"Failed to exchange code: {str(e)}"
         print(f"[ERROR] {error_msg}")
@@ -494,22 +356,28 @@ def google_exchange(req: GoogleExchangeRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Google did not return an email for this account")
 
-    # Upsert user
-    user = db.query(CustomUser).filter(CustomUser.email == email).first()
+    user = db.query(CustomUser).filter(CustomUser.oauth_provider == "google", CustomUser.oauth_subject == sub).first()
+    if not user:
+        user = db.query(CustomUser).filter(func.lower(CustomUser.email) == _normalize_email(email)).first()
     if not user:
         base_username = email.split("@")[0]
         username = _ensure_unique_username(db, base_username)
-        # Create a random password since we don't use it for OAuth users
-        random_pw = str(uuid.uuid4())
         user = CustomUser(
             username=username,
             email=email,
-            password=hash_password(random_pw),
-            first_name=name
+            first_name=name,
+            image=info.get("picture"),
+            oauth_provider="google",
+            oauth_subject=sub,
         )
         db.add(user)
-        db.commit()
-        db.refresh(user)
+    else:
+        user.oauth_provider = user.oauth_provider or "google"
+        user.oauth_subject = user.oauth_subject or sub
+        user.first_name = name or user.first_name
+        user.image = info.get("picture") or user.image
+    db.commit()
+    db.refresh(user)
 
     # Create local JWTs
     access = create_access_token({"sub": str(user.id)})
@@ -522,7 +390,10 @@ def google_exchange(req: GoogleExchangeRequest, db: Session = Depends(get_db)):
             "id": user.id,
             "username": user.username,
             "email": user.email,
-            "first_name": user.first_name
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "image": user.image,
+            "oauth_provider": "google",
         }
     }
 
@@ -832,20 +703,28 @@ def prompt_gpt(
     
     # Call Groq API
     try:
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        groq_api_key, groq_api_url = get_groq_config()
+        headers = {"Authorization": f"Bearer {groq_api_key}"}
         payload = {
-            "model": "llama-3.1-8b-instant",
+            "model": get_groq_model(),
             "messages": groq_messages,
             "max_tokens": 1024,
             "temperature": 0.6,
         }
-        response = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=60)
+        if payload["model"].startswith("openai/gpt-oss"):
+            payload["reasoning_effort"] = "low"
+        response = requests.post(groq_api_url, headers=headers, json=payload, timeout=60)
         response.raise_for_status()
         data = response.json()
         groq_reply = data["choices"][0]["message"]["content"]
         
         if not groq_reply:
             raise RuntimeError("Groq returned no text.")
+    except RuntimeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Groq configuration error: {str(e)}"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1093,7 +972,7 @@ def get_chat_messages_paginated(
 
 @router.get("/api/chats/search-messages/", tags=["Chat"])
 def search_messages(
-    query: str = Field(..., min_length=1, max_length=200),
+    query: str = Query(..., min_length=1, max_length=200),
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):

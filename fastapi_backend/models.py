@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Boolean, func, JSON
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Boolean, JSON, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import enum
@@ -18,7 +18,8 @@ class CustomUser(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(150), unique=True, nullable=False, index=True)
     email = Column(String(254), unique=True, nullable=False, index=True)
-    password = Column(String(128), nullable=False)
+    oauth_provider = Column(String(20), nullable=False)
+    oauth_subject = Column(String(255), nullable=False)
     first_name = Column(String(150), nullable=False, default='')
     last_name = Column(String(150), nullable=False, default='')
     image = Column(Text, nullable=True)  # Store base64 or image URL
@@ -27,6 +28,8 @@ class CustomUser(Base):
     is_superuser = Column(Boolean, default=False)
     last_login = Column(DateTime, nullable=True)
     date_joined = Column(DateTime, default=utc_now)
+
+    __table_args__ = (UniqueConstraint("oauth_provider", "oauth_subject", name="uq_customuser_oauth_identity"),)
     
     # Relationships
     chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")
@@ -89,24 +92,6 @@ class UserSearchHistory(Base):
     
     def __str__(self):
         return f"{self.user.username}: {self.search_query[:50]}"
-
-
-# Password Reset Token Model
-class PasswordResetToken(Base):
-    __tablename__ = "chatpaat_app_passwordresettoken"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("chatpaat_app_customuser.id"), nullable=False, index=True)
-    token_hash = Column(String(128), nullable=False, index=True)
-    used = Column(Boolean, default=False)
-    expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=utc_now)
-
-    # Relationship
-    user = relationship("CustomUser")
-
-    def __str__(self):
-        return f"PasswordResetToken(user_id={self.user_id}, used={self.used})"
 
 
 # ✅ ADDED: User Preferences Model for storing user settings

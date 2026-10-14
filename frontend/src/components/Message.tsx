@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import vs2015 from "react-syntax-highlighter/dist/esm/styles/prism/atom-dark";
 import { Copy, Check, Smile, MessageCircle, Edit2, Trash2 } from "lucide-react";
-import { useTypewriter, useSwipeGesture } from "@/lib/animations";
+import { useTypewriter, useSwipeGesture } from "../lib/animations";
 
 interface MessageProps {
   role: "user" | "assistant";

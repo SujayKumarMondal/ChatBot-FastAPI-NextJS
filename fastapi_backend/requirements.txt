@@ -28,3 +28,4 @@ python-json-logger==2.0.7  # Structured logging
 # reportlab==4.0.7
 # Optional: For message encryption
 # cryptography is already installed above
+resend

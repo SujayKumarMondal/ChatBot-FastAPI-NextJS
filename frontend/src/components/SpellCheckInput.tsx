@@ -51,7 +51,6 @@ export default function SpellCheckInput({
 
       // Remove punctuation for spell checking, but keep track of original
       const cleanWord = word.replace(/[.,!?;:—-]$/g, "");
-      const punctuation = word.slice(cleanWord.length);
 
       if (cleanWord && !dictionary.check(cleanWord)) {
         const suggestions = dictionary.suggest(cleanWord).slice(0, 5);

@@ -35,7 +35,7 @@ ChatPaat is built as a modern, scalable web application using:
 - **Frontend**: React 18 with TypeScript, Vite, and Framer Motion
 - **Backend**: FastAPI with Python 3.x
 - **Database**: SQLite (development) / PostgreSQL (production)
-- **AI Engine**: Groq API with LLaMA 3.1-8b-instant
+- **AI Engine**: Groq API with OpenAI GPT-OSS 20B
 - **Authentication**: JWT tokens + Google OAuth 2.0
 - **Email Service**: SendGrid for transactional emails
 
@@ -49,7 +49,7 @@ ChatPaat is built as a modern, scalable web application using:
 ### Core Features
 | Feature | Description | Impact |
 |---------|-------------|--------|
-| **AI Conversations** | Real-time chat with LLaMA 3.1-8b-instant | Users get intelligent, context-aware responses |
+| **AI Conversations** | Real-time chat with OpenAI GPT-OSS 20B | Users get intelligent, context-aware responses |
 | **JWT Authentication** | Secure token-based auth with refresh tokens | Enterprise-grade security with stateless servers |
 | **Google OAuth 2.0** | One-click sign-in with existing Google account | Reduced friction, improved user adoption |
 | **Chat Management** | Full CRUD operations on conversations | Users maintain organized conversation history |
@@ -113,7 +113,7 @@ ChatPaat is built as a modern, scalable web application using:
 - **Migrations**: Handled via SQLAlchemy ORM
 
 ### External Services
-- **AI/LLM**: Groq API (llama-3.1-8b-instant)
+- **AI/LLM**: Groq API (openai/gpt-oss-20b)
 - **Authentication**: Google OAuth 2.0
 - **Email**: SendGrid API
 - **Profile Images**: DiceBear API (avatar generation) + localStorage (browser)

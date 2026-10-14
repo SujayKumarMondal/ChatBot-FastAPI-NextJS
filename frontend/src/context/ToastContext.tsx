@@ -65,12 +65,11 @@ function ToastContainer({
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none overflow-hidden">
       <AnimatePresence mode="wait">
-        {toasts.map((toast, index) => (
+        {toasts.map((toast) => (
           <ToastItem
             key={toast.id}
             toast={toast}
             onRemove={() => onRemove(toast.id)}
-            index={index}
           />
         ))}
       </AnimatePresence>
@@ -81,11 +80,9 @@ function ToastContainer({
 function ToastItem({
   toast,
   onRemove,
-  index,
 }: {
   toast: Toast;
   onRemove: () => void;
-  index: number;
 }) {
   const handleClose = () => {
     onRemove();

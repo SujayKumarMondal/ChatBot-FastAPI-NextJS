@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
+import { getApiBaseUrl } from "./config";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:7004";
+const BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -275,24 +276,6 @@ export async function updateUserProfile(
 ) {
   try {
     const response = await api.put("/api/profile/", data, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  } catch (err: unknown) {
-    handleError(err);
-  }
-}
-
-// 🔹 Change password
-export async function changePassword(
-  data: {
-    old_password: string;
-    new_password: string;
-  },
-  token: string
-) {
-  try {
-    const response = await api.post("/api/profile/change-password/", data, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
