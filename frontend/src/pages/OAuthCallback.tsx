@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getApiBaseUrl } from '../lib/config';
+import { consumeGoogleOAuthState } from '../lib/googleOAuth';
 
 const OAuthCallback = () => {
   const navigate = useNavigate();
@@ -18,6 +19,11 @@ const OAuthCallback = () => {
     const provider = 'google';
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
+
+    if (!consumeGoogleOAuthState(searchParams.get('state'))) {
+      navigate('/', { replace: true, state: { error: 'Google Sign-In could not be verified. Please try again.' } });
+      return;
+    }
 
     if (error) {
       console.error('OAuth error:', error, errorDescription);
@@ -71,18 +77,14 @@ const OAuthCallback = () => {
           image: data.user?.image || "",
         };
 
-        sessionStorage.setItem("access_token", data.access);
-        sessionStorage.setItem("refresh_token", data.refresh);
-        sessionStorage.setItem("user", JSON.stringify(userWithProvider));
-
         signInWithTokens(data.access, data.refresh, userWithProvider);
-
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 50);
-      } catch (err: any) {
+        navigate('/', { replace: true });
+      } catch (err) {
         console.error('Token exchange failed:', err);
-        navigate('/', { replace: true, state: { error: err.message } });
+        navigate('/', {
+          replace: true,
+          state: { error: err instanceof Error ? err.message : 'Token exchange failed.' },
+        });
       }
     };
 

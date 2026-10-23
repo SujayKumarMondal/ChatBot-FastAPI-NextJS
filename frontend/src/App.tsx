@@ -35,9 +35,9 @@ const App = () => {
               <Route path="/history" element={<PageTransition><HistoryPage /></PageTransition>} />
               {/* App layout */}
               <Route path="/" element={<MainLayout />}>
-                <Route index element={<PageTransition><HomePage /></PageTransition>} />
-                <Route path="chats/:chat_uid" element={<PageTransition><HomePage /></PageTransition>} />
-                <Route path="chats/new" element={<PageTransition><HomePage /></PageTransition>} />
+                <Route index element={<PageTransition className="flex min-h-0 min-w-0 flex-1 flex-col"><HomePage /></PageTransition>} />
+                <Route path="chats/:chat_uid" element={<PageTransition className="flex min-h-0 min-w-0 flex-1 flex-col"><HomePage /></PageTransition>} />
+                <Route path="chats/new" element={<PageTransition className="flex min-h-0 min-w-0 flex-1 flex-col"><HomePage /></PageTransition>} />
                 <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
                 <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
               </Route>

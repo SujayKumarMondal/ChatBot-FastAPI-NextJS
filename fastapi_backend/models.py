@@ -137,3 +137,24 @@ class AuditLog(Base):
     
     def __str__(self):
         return f"AuditLog(user_id={self.user_id}, action={self.action}, resource={self.resource})"
+
+
+class RagDocument(Base):
+    __tablename__ = "rag_documents"
+
+    id = Column(String(36), primary_key=True)
+    user_id = Column(Integer, ForeignKey("chatpaat_app_customuser.id", ondelete="CASCADE"), nullable=False, index=True)
+    filename = Column(String(255), nullable=False)
+    media_type = Column(String(255), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=utc_now)
+
+
+class RagChunk(Base):
+    __tablename__ = "rag_chunks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    document_id = Column(String(36), ForeignKey("rag_documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("chatpaat_app_customuser.id", ondelete="CASCADE"), nullable=False, index=True)
+    chunk_index = Column(Integer, nullable=False)
+    content = Column(Text, nullable=False)
+    embedding = Column(Text, nullable=False)

@@ -14,11 +14,12 @@ const api = axios.create({
 function handleError(err: unknown): never {
   if (axios.isAxiosError(err)) {
     const axiosError = err as AxiosError;
-    throw new Error(
-      axiosError.response?.data
-        ? JSON.stringify(axiosError.response.data)
-        : axiosError.message
-    );
+    const responseData = axiosError.response?.data;
+    if (responseData && typeof responseData === "object" && "detail" in responseData) {
+      const detail = (responseData as { detail?: unknown }).detail;
+      if (typeof detail === "string") throw new Error(detail);
+    }
+    throw new Error(responseData ? JSON.stringify(responseData) : axiosError.message);
   } else if (err instanceof Error) {
     throw new Error(err.message);
   }
@@ -26,9 +27,38 @@ function handleError(err: unknown): never {
 }
 
 // 🔹 Prompt GPT
-export async function promptGPT(data: { chat_id: string; content: string }, token: string) {
+export async function promptGPT(
+  data: {
+    chat_id: string;
+    content: string;
+    document_ids?: string[];
+    edit_message_id?: number;
+  },
+  token: string
+) {
   try {
     const response = await api.post("/prompt_gpt/", data, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+export interface RagDocument {
+  id: string;
+  filename: string;
+  media_type: string;
+  chunk_count: number;
+  created_at: string;
+}
+
+export async function uploadRagDocument(file: File, token: string): Promise<RagDocument> {
+  const formData = new FormData();
+  formData.append("file", file);
+  try {
+    const response = await axios.post(`${BASE_URL}/api/rag/documents/`, formData, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Chrome } from "lucide-react";
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+import { startGoogleOAuthRedirect } from "../lib/googleOAuth";
 
 export default function LoginPrompt() {
   const location = useLocation();
   const [error, setError] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
     const state = location.state as { error?: string } | null;
@@ -16,25 +16,15 @@ export default function LoginPrompt() {
     }
   }, [location.state]);
 
-  const startOAuth = () => {
-    const clientId = GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      setError("Google Sign-In is not configured.");
-      return;
+  const startOAuth = async () => {
+    setError("");
+    setIsSigningIn(true);
+    try {
+      await startGoogleOAuthRedirect();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to start Google Sign-In.");
+      setIsSigningIn(false);
     }
-
-    const redirectUri = `${window.location.origin}/oauth-callback`;
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: "code",
-      state: "google",
-    });
-
-    params.set("scope", "openid email profile");
-    params.set("access_type", "offline");
-    params.set("prompt", "select_account");
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
   };
 
   return (
@@ -69,10 +59,15 @@ export default function LoginPrompt() {
           <Button
             type="button"
             onClick={startOAuth}
+            disabled={isSigningIn}
             className="w-full bg-primary py-3 text-sm text-primary-foreground hover:bg-primary/90 sm:text-base"
           >
-            <Chrome className="mr-2 h-4 w-4" />
-            Sign In With Google
+            {isSigningIn ? (
+              <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true" />
+            ) : (
+              <Chrome className="mr-2 h-4 w-4" />
+            )}
+            {isSigningIn ? "Connecting to Google..." : "Sign In With Google"}
           </Button>
         </div>
       </div>

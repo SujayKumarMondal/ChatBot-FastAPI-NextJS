@@ -39,7 +39,7 @@ export default function SettingsPage() {
     const root = document.documentElement;
     root.setAttribute("data-font-size", fontSize);
     root.setAttribute("data-message-density", messageDensity);
-  }, []);
+  }, [fontSize, messageDensity]);
 
   const handleFontSizeChange = (size: string) => {
     setFontSize(size);
@@ -74,58 +74,62 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="settings-page min-h-screen bg-background text-foreground">
       {/* Header */}
       <div className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
-        <div className="flex items-center gap-4 px-6 py-4">
+        <div className="flex items-center gap-3 px-4 sm:px-5 py-2.5">
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center justify-center rounded-lg p-2 hover:bg-muted transition-colors"
+            className="inline-flex items-center justify-center rounded-lg p-1.5 hover:bg-muted transition-colors"
             aria-label="Go back"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-3">
-            <Settings className="h-6 w-6" />
-            <h1 className="text-2xl font-bold">Settings</h1>
+            <Settings className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-semibold">Settings</h1>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-6 py-8 space-y-8">
+      <div className="mx-auto max-w-2xl px-4 sm:px-5 py-5 space-y-5">
         {/* Theme Section */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-            <Moon className="h-5 w-5" />
+        <section className="space-y-2.5">
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+            <Moon className="h-4 w-4 text-primary" />
             Theme
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {(Object.entries(themePresets) as [Theme, any][]).map(([key, theme]) => (
-              <button
-                key={key}
-                onClick={() => setTheme(key)}
-                className={`p-3 rounded-lg border-2 transition-all text-left ${
-                  currentTheme === key
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <div className="font-medium text-sm">{theme.label}</div>
-                <div className="text-xs text-muted-foreground">{theme.description}</div>
-              </button>
+          <label htmlFor="appearance-theme" className="sr-only">Choose a color theme</label>
+          <select
+            id="appearance-theme"
+            value={currentTheme}
+            onChange={(event) => setTheme(event.target.value as Theme)}
+            className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            {(["VS Code built-in", "Advanced & classic"] as const).map((group) => (
+              <optgroup key={group} label={group}>
+                {Object.entries(themePresets)
+                  .filter(([, theme]) => theme.group === group)
+                  .map(([key, theme]) => (
+                    <option key={key} value={key}>{theme.label}</option>
+                  ))}
+              </optgroup>
             ))}
-          </div>
+          </select>
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            {themePresets[currentTheme].description}
+          </p>
         </section>
 
         {/* Accent Color Section */}
-        <section className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Accent Color</h3>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Accent Color</h3>
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
             {accentColors.map((color) => (
               <button
                 key={color.value}
                 onClick={() => setAccentColor(color.value)}
-                className={`h-12 rounded-lg border-2 transition-transform hover:scale-110 ${
+                className={`h-9 rounded-lg border-2 transition-transform hover:scale-105 ${
                   accentColor === color.value
                     ? "border-foreground scale-110"
                     : "border-transparent"
@@ -139,9 +143,9 @@ export default function SettingsPage() {
         </section>
 
         {/* Accessibility Section */}
-        <section className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Accessibility</h3>
-          <div className="space-y-3">
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Accessibility</h3>
+          <div className="space-y-2">
             <ToggleOption
               label="High Contrast Mode"
               description="Increases color contrast for better visibility"
@@ -158,8 +162,8 @@ export default function SettingsPage() {
         </section>
 
         {/* Font Size Section */}
-        <section className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Font Size</h3>
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Font Size</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {[
               { label: "Small", value: "small" },
@@ -183,8 +187,8 @@ export default function SettingsPage() {
         </section>
 
         {/* Message Display Section */}
-        <section className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Message Display</h3>
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Message Display</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {[
               { label: "Compact", value: "compact" },
@@ -207,9 +211,9 @@ export default function SettingsPage() {
         </section>
 
         {/* Chat Behavior Section */}
-        <section className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Chat Behavior</h3>
-          <div className="space-y-3">
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Chat Behavior</h3>
+          <div className="space-y-2">
             <ToggleOption
               label="Auto-Scroll to Latest"
               description="Automatically scroll to the latest message"
@@ -226,9 +230,9 @@ export default function SettingsPage() {
         </section>
 
         {/* Notification Settings */}
-        <section className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Notifications</h3>
-          <div className="space-y-3">
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
+          <div className="space-y-2">
             <ToggleOption
               label="Enable Notifications"
               description="Show desktop notifications for new messages"
@@ -246,8 +250,8 @@ export default function SettingsPage() {
         </section>
 
         {/* Reset Section */}
-        <section className="space-y-4 pt-8 border-t border-border">
-          <h3 className="text-lg font-semibold text-foreground">Reset</h3>
+        <section className="space-y-2 pt-4 border-t border-border">
+          <h3 className="text-sm font-semibold text-foreground">Reset</h3>
           <Button
             onClick={() => {
               localStorage.clear();
@@ -281,7 +285,7 @@ function ToggleOption({
 }: ToggleOptionProps) {
   return (
     <div
-      className={`flex items-center justify-between p-3 rounded-lg border border-border ${
+      className={`flex items-center justify-between p-2.5 rounded-lg border border-border ${
         disabled ? "opacity-50 cursor-not-allowed" : ""
       }`}
     >
@@ -294,7 +298,7 @@ function ToggleOption({
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         disabled={disabled}
-        className="w-5 h-5 rounded cursor-pointer accent-primary"
+        className="w-4 h-4 rounded cursor-pointer accent-primary"
         aria-label={label}
       />
     </div>

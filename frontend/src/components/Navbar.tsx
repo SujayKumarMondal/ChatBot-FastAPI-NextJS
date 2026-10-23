@@ -14,7 +14,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarTrigger } from "./ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
-import { useTheme } from "@/context/ThemeContext";
+import { themePresets, useTheme } from "@/context/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -28,7 +28,7 @@ export default function Navbar() {
   const [avatarFailed, setAvatarFailed] = useState(false);
 
   const avatarSrc = user?.image ?? "";
-  const isDark = currentTheme === "dark" || currentTheme !== "light";
+  const isDark = themePresets[currentTheme].mode === "dark";
 
   useEffect(() => {
     setAvatarFailed(false);
@@ -53,9 +53,9 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-gradient-to-r from-background via-background to-primary/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 shadow-lg shadow-primary/10">
+      <header className="app-header sticky top-0 z-50 w-full border-b border-border/70 bg-background/85 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/75">
         
-        <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 md:px-6">
+        <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 sm:px-5 md:px-7">
 
           {/* ========================================================= */}
           {/* LEFT SECTION - SIDEBAR + LOGO                            */}
@@ -70,16 +70,16 @@ export default function Navbar() {
                 <img
                   src="/brand_logo.png"
                   alt="ChatPaat Logo"
-                  className="h-10 w-10 hover:scale-110 transition-transform"
+                  className="h-9 w-9 transition-transform duration-200 hover:scale-105"
                 />
 
                 <div className="flex flex-col min-w-0">
-                  <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                  <span className="text-base font-semibold tracking-tight text-foreground">
                     ChatPaat
                   </span>
 
-                  <span className="text-[10px] font-medium text-accent/70">
-                    AI Companion
+                  <span className="whitespace-nowrap text-[10px] font-medium tracking-wide text-muted-foreground">
+                    YOUR AI WORKSPACE
                   </span>
                 </div>
 
@@ -93,8 +93,9 @@ export default function Navbar() {
           {/* ========================================================= */}
           <div className="flex min-w-0 justify-center px-2">
 
-            <span className="hidden lg:block text-center text-sm md:text-base font-bold text-muted-foreground truncate max-w-[44rem] border-l border-border/40 pl-1">
-              Your AI Assistant. It can make mistakes, check wisely before you act.
+            <span className="hidden items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 text-xs font-medium text-muted-foreground lg:inline-flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              Private conversations · AI can make mistakes
             </span>
 
           </div>

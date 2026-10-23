@@ -29,3 +29,4 @@ python-json-logger==2.0.7  # Structured logging
 # Optional: For message encryption
 # cryptography is already installed above
 resend
+pypdf==5.9.0

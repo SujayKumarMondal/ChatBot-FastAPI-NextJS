@@ -7,6 +7,8 @@ interface SpellCheckInputProps {
   value: string;
   onChange: (value: string) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
+  inputRef?: React.RefObject<HTMLTextAreaElement>;
   placeholder?: string;
   className?: string;
 }
@@ -24,12 +26,15 @@ export default function SpellCheckInput({
   value,
   onChange,
   onKeyDown,
+  onPaste,
+  inputRef,
   placeholder = "Ask me anything...",
   className = "",
 }: SpellCheckInputProps) {
   const [spellErrors, setSpellErrors] = useState<SpellError[]>([]);
   const [activeErrorIndex, setActiveErrorIndex] = useState<number | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = inputRef ?? internalTextareaRef;
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Check spelling errors
@@ -223,6 +228,7 @@ export default function SpellCheckInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
+        onPaste={onPaste}
         placeholder={placeholder}
         className={`relative w-full resize-none min-h-[50px] max-h-[150px] rounded-md border border-input bg-muted/40 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground shadow-sm transition ${className}`}
         style={{
@@ -230,7 +236,6 @@ export default function SpellCheckInput({
           lineHeight: "1.5",
           whiteSpace: "pre-wrap",
           wordWrap: "break-word",
-          backgroundColor: "rgba(0,0,0,0.02)",
           zIndex: 3,
         }}
       />

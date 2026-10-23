@@ -4,6 +4,7 @@ import { SidebarProvider} from "./ui/sidebar"
 import Navbar from "./Navbar"
 import { useEffect } from "react"
 import { useAuth } from "@/context/AuthContext"
+import { MotionConfig } from "framer-motion"
 
 const MainLayout = () => {
   const { user } = useAuth();
@@ -20,25 +21,29 @@ const MainLayout = () => {
 
   if (!user) {
     return (
-      <main className="w-full min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-secondary/5">
-        <Navbar />
-        <div className="flex-1 overflow-y-auto">
-          <Outlet />
-        </div>
-      </main>
+      <MotionConfig reducedMotion="user">
+        <main className="app-canvas flex min-h-screen w-full flex-col">
+          <Navbar />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <Outlet />
+          </div>
+        </main>
+      </MotionConfig>
     );
   }
 
   return (
-     <SidebarProvider>
-      <AppSidebar />
-      <main className="w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-secondary/5">
-        <Navbar />
-        <div className="flex-1 overflow-y-auto">
-          {<Outlet />}
-        </div>
-      </main>
-    </SidebarProvider>
+    <MotionConfig reducedMotion="user">
+      <SidebarProvider>
+        <AppSidebar />
+        <main className="app-canvas flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
+          <Navbar />
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <Outlet />
+          </div>
+        </main>
+      </SidebarProvider>
+    </MotionConfig>
   )
 }
 
