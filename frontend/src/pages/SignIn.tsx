@@ -28,9 +28,9 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary/10">
+    <div className="auth-screen flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary/10">
       <div
-        className="relative bg-gradient-to-br from-card to-card/80 border border-primary/20 p-8 rounded-2xl shadow-xl shadow-primary/20 w-full max-w-md space-y-6"
+        className="auth-card relative bg-gradient-to-br from-card to-card/80 border border-primary/20 p-8 rounded-2xl shadow-xl shadow-primary/20 w-full max-w-md space-y-6"
       >
         {/* Logo Header */}
         <div className="flex flex-col items-center gap-3 mb-6">

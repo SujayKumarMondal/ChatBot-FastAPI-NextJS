@@ -38,8 +38,8 @@ const App = () => {
                 <Route index element={<PageTransition className="flex min-h-0 min-w-0 flex-1 flex-col"><HomePage /></PageTransition>} />
                 <Route path="chats/:chat_uid" element={<PageTransition className="flex min-h-0 min-w-0 flex-1 flex-col"><HomePage /></PageTransition>} />
                 <Route path="chats/new" element={<PageTransition className="flex min-h-0 min-w-0 flex-1 flex-col"><HomePage /></PageTransition>} />
-                <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
-                <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
+                <Route path="/terms" element={<PageTransition className="legal-route-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain"><TermsPage /></PageTransition>} />
+                <Route path="/privacy-policy" element={<PageTransition className="legal-route-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain"><PrivacyPolicyPage /></PageTransition>} />
               </Route>
             </Routes>
             <SessionWarningModal />

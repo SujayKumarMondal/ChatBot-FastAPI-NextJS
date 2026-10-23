@@ -28,8 +28,8 @@ export default function LoginPrompt() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-background via-background to-secondary/5 px-4 py-6 sm:px-6">
-      <div className="mx-auto w-full max-w-md text-center">
+    <div className="auth-screen flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-background via-background to-secondary/5 px-4 py-6 sm:px-6">
+      <div className="auth-card mx-auto w-full max-w-md text-center">
         <img
           src="/brand_logo.png"
           alt="ChatPaat Logo"

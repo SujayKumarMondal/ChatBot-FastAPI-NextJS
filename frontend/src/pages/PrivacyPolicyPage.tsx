@@ -1,6 +1,6 @@
 export default function PrivacyPolicyPage() {
   return (
-    <div className="max-w-3xl mx-auto p-8 bg-background text-foreground rounded-xl shadow-lg">
+    <div className="legal-page max-w-3xl mx-auto p-8 bg-background text-foreground rounded-xl shadow-lg">
       {/* Page Header */}
       <h1 className="text-3xl font-extrabold mb-6 text-center">
         Privacy Policy
