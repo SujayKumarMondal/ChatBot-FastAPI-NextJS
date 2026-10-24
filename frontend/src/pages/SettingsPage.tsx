@@ -1,11 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTheme, themePresets, accentColors, Theme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { Moon, Settings, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
+import { getUserPreferences, updateUserPreferences, UserPreferences } from "@/lib/api";
+
+const isTheme = (value: string): value is Theme =>
+  Object.prototype.hasOwnProperty.call(themePresets, value);
+
+const isFontSize = (value: string): value is UserPreferences["font_size"] =>
+  ["small", "base", "large", "xl"].includes(value);
+
+const isMessageDensity = (value: string): value is UserPreferences["message_density"] =>
+  ["compact", "comfortable", "spacious"].includes(value);
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { token } = useAuth();
+  const { addToast } = useToast();
+  const loadedToken = useRef<string | null>(null);
   const {
     currentTheme,
     setTheme,
@@ -16,10 +31,30 @@ export default function SettingsPage() {
     warmPalette,
     setWarmPalette,
   } = useTheme();
+  const preferenceActions = useRef({
+    setTheme,
+    setAccentColor,
+    setHighContrast,
+    setWarmPalette,
+    addToast,
+  });
+  preferenceActions.current = {
+    setTheme,
+    setAccentColor,
+    setHighContrast,
+    setWarmPalette,
+    addToast,
+  };
 
-  const [fontSize, setFontSize] = useState(localStorage.getItem("fontSize") || "base");
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem("fontSize") || "base";
+    return isFontSize(saved) ? saved : "base";
+  });
   const [messageDensity, setMessageDensity] = useState(
-    localStorage.getItem("messageDensity") || "comfortable"
+    (() => {
+      const saved = localStorage.getItem("messageDensity") || "comfortable";
+      return isMessageDensity(saved) ? saved : "comfortable";
+    })()
   );
   const [autoScroll, setAutoScroll] = useState(
     localStorage.getItem("autoScroll") !== "false"
@@ -33,6 +68,89 @@ export default function SettingsPage() {
   const [compactSidebar, setCompactSidebar] = useState(
     localStorage.getItem("compactSidebar") === "true"
   );
+  const [preferencesReady, setPreferencesReady] = useState(false);
+
+  useEffect(() => {
+    if (!token) {
+      loadedToken.current = null;
+      setPreferencesReady(false);
+      return;
+    }
+    if (loadedToken.current === token) return;
+    loadedToken.current = token;
+    setPreferencesReady(false);
+    let active = true;
+
+    void getUserPreferences(token).then(({ initialized, preferences }) => {
+      if (!active) return;
+      if (initialized) {
+        const actions = preferenceActions.current;
+        if (isTheme(preferences.theme)) actions.setTheme(preferences.theme);
+        if (accentColors.some((color) => color.value === preferences.accent_color)) {
+          actions.setAccentColor(preferences.accent_color);
+        }
+        actions.setHighContrast(preferences.high_contrast);
+        actions.setWarmPalette(preferences.warm_palette);
+        setFontSize(preferences.font_size);
+        setMessageDensity(preferences.message_density);
+        setAutoScroll(preferences.auto_scroll);
+        setNotifications(preferences.notifications_enabled);
+        setSoundEnabled(preferences.sound_enabled);
+        setCompactSidebar(preferences.compact_sidebar);
+      }
+      setPreferencesReady(true);
+    }).catch((error: unknown) => {
+      if (active) {
+        preferenceActions.current.addToast({
+          message: error instanceof Error ? error.message : "Failed to load saved settings",
+          type: "error",
+        });
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
+  useEffect(() => {
+    if (!token || !preferencesReady) return;
+    const preferences: Partial<UserPreferences> = {
+      theme: currentTheme,
+      accent_color: accentColor,
+      high_contrast: highContrast,
+      warm_palette: warmPalette,
+      font_size: fontSize,
+      message_density: messageDensity,
+      auto_scroll: autoScroll,
+      notifications_enabled: notifications,
+      sound_enabled: soundEnabled,
+      compact_sidebar: compactSidebar,
+    };
+    const timeout = window.setTimeout(() => {
+      void updateUserPreferences(preferences, token).catch((error: unknown) => {
+        addToast({
+          message: error instanceof Error ? error.message : "Failed to save settings",
+          type: "error",
+        });
+      });
+    }, 400);
+    return () => window.clearTimeout(timeout);
+  }, [
+    token,
+    preferencesReady,
+    currentTheme,
+    accentColor,
+    highContrast,
+    warmPalette,
+    fontSize,
+    messageDensity,
+    autoScroll,
+    notifications,
+    soundEnabled,
+    compactSidebar,
+    addToast,
+  ]);
 
   // Initialize data attributes on mount
   useEffect(() => {
@@ -41,13 +159,13 @@ export default function SettingsPage() {
     root.setAttribute("data-message-density", messageDensity);
   }, [fontSize, messageDensity]);
 
-  const handleFontSizeChange = (size: string) => {
+  const handleFontSizeChange = (size: UserPreferences["font_size"]) => {
     setFontSize(size);
     localStorage.setItem("fontSize", size);
     document.documentElement.setAttribute("data-font-size", size);
   };
 
-  const handleMessageDensityChange = (density: string) => {
+  const handleMessageDensityChange = (density: UserPreferences["message_density"]) => {
     setMessageDensity(density);
     localStorage.setItem("messageDensity", density);
     document.documentElement.setAttribute("data-message-density", density);
@@ -165,12 +283,12 @@ export default function SettingsPage() {
         <section className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground">Font Size</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {[
+            {([
               { label: "Small", value: "small" },
               { label: "Base", value: "base" },
               { label: "Large", value: "large" },
               { label: "Extra Large", value: "xl" },
-            ].map(({ label, value }) => (
+            ] as const).map(({ label, value }) => (
               <button
                 key={value}
                 onClick={() => handleFontSizeChange(value)}
@@ -190,11 +308,11 @@ export default function SettingsPage() {
         <section className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground">Message Display</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {[
+            {([
               { label: "Compact", value: "compact" },
               { label: "Comfortable", value: "comfortable" },
               { label: "Spacious", value: "spacious" },
-            ].map(({ label, value }) => (
+            ] as const).map(({ label, value }) => (
               <button
                 key={value}
                 onClick={() => handleMessageDensityChange(value)}
@@ -254,8 +372,16 @@ export default function SettingsPage() {
           <h3 className="text-sm font-semibold text-foreground">Reset</h3>
           <Button
             onClick={() => {
-              localStorage.clear();
-              window.location.reload();
+              setTheme("light");
+              setAccentColor(themePresets.light.accent);
+              setHighContrast(false);
+              setWarmPalette(false);
+              handleFontSizeChange("base");
+              handleMessageDensityChange("comfortable");
+              handleAutoScrollChange(true);
+              handleNotificationsChange(true);
+              handleSoundChange(true);
+              handleCompactSidebarChange(false);
             }}
             variant="outline"
             className="w-full"

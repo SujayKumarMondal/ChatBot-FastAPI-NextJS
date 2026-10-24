@@ -81,13 +81,14 @@ export async function getChatMessages(chatId: string, token: string) {
 }
 
 // 🔹 Get all chats for a user
-export async function getChatsByUserId(userId: number) {
+export async function getChatsByUserId(userId: number, token: string) {
   try {
-    const response = await api.get(`/api/data/chat/by-user-id/${userId}`);
+    const response = await api.get(`/api/data/chat/by-user-id/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     return response.data.data || [];
   } catch (err: unknown) {
-    console.error("Error fetching chats:", err);
-    return [];
+    handleError(err);
   }
 }
 
@@ -321,6 +322,48 @@ export async function deleteAccount(token: string) {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+export interface UserPreferences {
+  theme: string;
+  language: string;
+  notifications_enabled: boolean;
+  email_on_new_features: boolean;
+  two_factor_enabled: boolean;
+  timezone: string;
+  accent_color: string;
+  high_contrast: boolean;
+  warm_palette: boolean;
+  font_size: "small" | "base" | "large" | "xl";
+  message_density: "compact" | "comfortable" | "spacious";
+  auto_scroll: boolean;
+  sound_enabled: boolean;
+  compact_sidebar: boolean;
+}
+
+export async function getUserPreferences(token: string) {
+  try {
+    const response = await api.get("/api/preferences/", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data as { initialized: boolean; preferences: UserPreferences };
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+export async function updateUserPreferences(
+  preferences: Partial<UserPreferences>,
+  token: string
+) {
+  try {
+    const response = await api.put("/api/preferences/", preferences, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data as { initialized: boolean; preferences: UserPreferences };
   } catch (err: unknown) {
     handleError(err);
   }

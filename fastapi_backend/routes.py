@@ -9,9 +9,10 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status, Header, UploadFile, File, Query
 from fastapi.responses import FileResponse
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Literal, Optional
 import hashlib
 from dotenv import load_dotenv
 
@@ -22,7 +23,7 @@ BACKEND_DIR = Path(__file__).resolve().parent
 load_dotenv(BACKEND_DIR / ".env")
 
 from db import get_db
-from models import CustomUser, Chat, ChatMessage, UserSearchHistory
+from models import CustomUser, Chat, ChatMessage, UserSearchHistory, UserPreferences, RevokedToken
 from rag_service import (
     MAX_UPLOAD_BYTES,
     delete_document,
@@ -35,7 +36,7 @@ from rag_service import (
 )
 from auth import (
     create_access_token,
-    create_refresh_token, verify_token, SECRET_KEY
+    create_refresh_token, decode_token
 )
 
 logger = logging.getLogger(__name__)
@@ -151,6 +152,22 @@ class UpdateChatTitleRequest(BaseModel):
     title: str
 
 
+class UpdatePreferencesRequest(BaseModel):
+    theme: Optional[str] = Field(default=None, min_length=1, max_length=40)
+    language: Optional[str] = Field(default=None, min_length=2, max_length=10)
+    notifications_enabled: Optional[bool] = None
+    email_on_new_features: Optional[bool] = None
+    timezone: Optional[str] = Field(default=None, min_length=1, max_length=50)
+    accent_color: Optional[str] = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    high_contrast: Optional[bool] = None
+    warm_palette: Optional[bool] = None
+    font_size: Optional[Literal["small", "base", "large", "xl"]] = None
+    message_density: Optional[Literal["compact", "comfortable", "spacious"]] = None
+    auto_scroll: Optional[bool] = None
+    sound_enabled: Optional[bool] = None
+    compact_sidebar: Optional[bool] = None
+
+
 
 
 # ======================= Helper Functions =======================
@@ -169,14 +186,26 @@ def get_current_user(token: str, db: Session) -> CustomUser:
             detail="Invalid authorization header format"
         )
     
-    token = token.replace("Bearer ", "")
-    user_id = verify_token(token)
-    
-    if not user_id:
+    token = token[7:]
+    payload = decode_token(token)
+    if (
+        payload is None
+        or payload.get("type") != "access"
+        or not payload.get("sub")
+        or not payload.get("jti")
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token"
         )
+
+    if db.query(RevokedToken).filter(RevokedToken.jti == payload["jti"]).first():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked"
+        )
+
+    user_id = payload["sub"]
     
     user = db.query(CustomUser).filter(CustomUser.id == user_id).first()
     if not user:
@@ -186,6 +215,24 @@ def get_current_user(token: str, db: Session) -> CustomUser:
         )
     
     return user
+
+
+def _revoke_token(db: Session, payload: dict) -> None:
+    jti = payload.get("jti")
+    expires_at = payload.get("exp")
+    if not jti or not expires_at:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+    db.query(RevokedToken).filter(
+        RevokedToken.expires_at <= datetime.utcnow()
+    ).delete(synchronize_session=False)
+    if not db.query(RevokedToken).filter(RevokedToken.jti == jti).first():
+        db.add(RevokedToken(
+            jti=jti,
+            expires_at=datetime.utcfromtimestamp(expires_at),
+        ))
 
 
 def create_chat_title(user_message: str) -> str:
@@ -430,26 +477,45 @@ def refresh_token(authorization: str = Header(None), db: Session = Depends(get_d
         )
     
     token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-    
-    if not user_id:
+    payload = decode_token(token)
+    if (
+        payload is None
+        or payload.get("type") != "refresh"
+        or not payload.get("sub")
+        or not payload.get("jti")
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token"
         )
-    
+
+    if db.query(RevokedToken).filter(RevokedToken.jti == payload["jti"]).first():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has already been used or revoked"
+        )
+
     # Verify user still exists
-    user = db.query(CustomUser).filter(CustomUser.id == user_id).first()
+    user = db.query(CustomUser).filter(CustomUser.id == payload["sub"]).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found"
         )
-    
-    # Generate new tokens
+
+    # Rotate the refresh token so a previously used token cannot mint new sessions.
     new_access_token = create_access_token({"sub": str(user.id)})
     new_refresh_token = create_refresh_token({"sub": str(user.id)})
-    
+    _revoke_token(db, payload)
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has already been used or revoked"
+        ) from exc
+
     logger.info(f"✅ Tokens refreshed for user {user.id}")
     
     return {
@@ -464,17 +530,61 @@ def refresh_token(authorization: str = Header(None), db: Session = Depends(get_d
 
 
 @router.post("/api/logout/", tags=["Authentication"])
-def logout(authorization: str = Header(None), db: Session = Depends(get_db)):
+def logout(
+    authorization: str = Header(None),
+    refresh_token_header: Optional[str] = Header(None, alias="X-Refresh-Token"),
+    db: Session = Depends(get_db),
+):
     """
     Logout endpoint - frontend should delete local tokens
     
     - **authorization**: Bearer token from header
     - Returns: Logout confirmation
     """
-    user = get_current_user(authorization, db)
-    logger.info(f"✅ User {user.id} logged out")
-    
-    # In future, store revoked tokens in Redis/cache for token blacklisting
+    access_payload = None
+    if authorization and authorization.startswith("Bearer "):
+        access_payload = decode_token(authorization[7:])
+        if access_payload and access_payload.get("type") != "access":
+            access_payload = None
+
+    refresh_payload = decode_token(refresh_token_header) if refresh_token_header else None
+    if refresh_payload and refresh_payload.get("type") != "refresh":
+        refresh_payload = None
+
+    valid_payloads = [
+        payload
+        for payload in (access_payload, refresh_payload)
+        if payload and payload.get("sub") and payload.get("jti") and payload.get("exp")
+    ]
+    if not valid_payloads:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="A valid access or refresh token is required"
+        )
+
+    user_ids = {payload["sub"] for payload in valid_payloads}
+    if len(user_ids) != 1:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Access and refresh tokens do not belong to the same user"
+        )
+
+    active_payloads = [
+        payload
+        for payload in valid_payloads
+        if not db.query(RevokedToken).filter(RevokedToken.jti == payload["jti"]).first()
+    ]
+    if not active_payloads:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has already been revoked"
+        )
+
+    for payload in valid_payloads:
+        _revoke_token(db, payload)
+    db.commit()
+
+    logger.info("Tokens revoked for user %s", next(iter(user_ids)))
     return {"detail": "Logged out successfully"}
 
 
@@ -546,6 +656,75 @@ def update_profile(
             "last_name": user.last_name,
             "image": user.image
         }
+    }
+
+
+def _serialize_preferences(preferences: Optional[UserPreferences]) -> dict:
+    defaults = {
+        "theme": "light",
+        "language": "en",
+        "notifications_enabled": True,
+        "email_on_new_features": True,
+        "two_factor_enabled": False,
+        "timezone": "UTC",
+        "accent_color": "#168FA7",
+        "high_contrast": False,
+        "warm_palette": False,
+        "font_size": "base",
+        "message_density": "comfortable",
+        "auto_scroll": True,
+        "sound_enabled": True,
+        "compact_sidebar": False,
+    }
+    if preferences is None:
+        return defaults
+    return {
+        key: getattr(preferences, key)
+        for key in defaults
+    }
+
+
+@router.get("/api/preferences/", tags=["Profile"])
+def get_preferences(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db),
+):
+    """Get the authenticated user's persisted preferences, if initialized."""
+    user = get_current_user(authorization, db)
+    preferences = db.query(UserPreferences).filter(
+        UserPreferences.user_id == user.id
+    ).first()
+    return {
+        "initialized": preferences is not None,
+        "preferences": _serialize_preferences(preferences),
+    }
+
+
+@router.put("/api/preferences/", tags=["Profile"])
+def update_preferences(
+    preference_data: UpdatePreferencesRequest,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db),
+):
+    """Create or update the authenticated user's preferences."""
+    user = get_current_user(authorization, db)
+    preferences = db.query(UserPreferences).filter(
+        UserPreferences.user_id == user.id
+    ).first()
+    if preferences is None:
+        preferences = UserPreferences(user_id=user.id)
+        db.add(preferences)
+
+    for key, value in preference_data.model_dump(
+        exclude_unset=True,
+        exclude_none=True,
+    ).items():
+        setattr(preferences, key, value)
+    db.commit()
+    db.refresh(preferences)
+    return {
+        "initialized": True,
+        "preferences": _serialize_preferences(preferences),
     }
 
 
@@ -1281,11 +1460,19 @@ def get_custom_user_by_id(
 
 @router.get("/api/data/chat/", tags=["Data Export"])
 def get_all_chats(
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     """
     Get all Chat records in JSON format (all users' chats)
     """
+    user = get_current_user(authorization, db)
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can access all chats"
+        )
+
     chats = db.query(Chat).all()
     
     return {
@@ -1306,17 +1493,24 @@ def get_all_chats(
 @router.get("/api/data/chat/{chat_id}", tags=["Data Export"])
 def get_chat_by_id(
     chat_id: str,
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     """
     Get a specific Chat record by ID in JSON format
     """
+    user = get_current_user(authorization, db)
     chat = db.query(Chat).filter(Chat.id == chat_id).first()
     
     if not chat:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Chat not found"
+        )
+    if chat.user_id != user.id and not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized access"
         )
     
     return {
@@ -1331,11 +1525,19 @@ def get_chat_by_id(
 @router.get("/api/data/chat/by-user-id/{user_id}", tags=["Data Export"])
 def get_chats_by_user_id(
     user_id: int,
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     """
     Get all Chat records for a specific user in JSON format
     """
+    user = get_current_user(authorization, db)
+    if user.id != user_id and not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized access"
+        )
+
     chats = db.query(Chat).filter(Chat.user_id == user_id).all()
     
     return {
@@ -1356,11 +1558,19 @@ def get_chats_by_user_id(
 
 @router.get("/api/data/usersearchhistory/", tags=["Data Export"])
 def get_all_search_history(
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     """
     Get all UserSearchHistory records in JSON format
     """
+    user = get_current_user(authorization, db)
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can access all search history"
+        )
+
     search_history = db.query(UserSearchHistory).all()
     
     return {
@@ -1380,17 +1590,24 @@ def get_all_search_history(
 @router.get("/api/data/usersearchhistory/{history_id}", tags=["Data Export"])
 def get_search_history_by_id(
     history_id: int,
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     """
     Get a specific UserSearchHistory record by ID in JSON format
     """
+    user = get_current_user(authorization, db)
     search_history = db.query(UserSearchHistory).filter(UserSearchHistory.id == history_id).first()
     
     if not search_history:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Search history record not found"
+        )
+    if search_history.user_id != user.id and not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized access"
         )
     
     return {
@@ -1404,11 +1621,19 @@ def get_search_history_by_id(
 @router.get("/api/data/usersearchhistory/by-user-id/{user_id}", tags=["Data Export"])
 def get_search_history_by_user_id(
     user_id: int,
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     """
     Get all UserSearchHistory records for a specific user in JSON format
     """
+    user = get_current_user(authorization, db)
+    if user.id != user_id and not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized access"
+        )
+
     search_history = db.query(UserSearchHistory).filter(UserSearchHistory.user_id == user_id).all()
     
     if not search_history:

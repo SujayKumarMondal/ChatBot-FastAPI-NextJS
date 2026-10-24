@@ -30,3 +30,12 @@ Retrieval-augmented chat
 - Image uploads use the configured `GROQ_API_URL` with `GROQ_API_KEY` and the vision-capable model in `GROQ_VISION_MODEL` (default: `qwen/qwen3.8-27b`). Set a model supported by the selected API account; provider rejection details are returned without exposing the key.
 - RAG documents and chunks use the same SQLAlchemy database configured by `DATABASE_URL` (or the `USE_POSTGRES` settings in `.env`). The backend creates missing RAG tables on first use. Leave `RAG_DATABASE_PATH` unset in normal deployments; setting it explicitly opts into an isolated SQLite index, mainly for tests or local experiments.
 - The index stores extracted text and vectors, not original files. Deleting the document removes its chunks and vectors. Existing indexed content is private to the user that uploaded it.
+
+Authentication, exports, and preferences
+
+- Access and refresh JWTs have separate token types. Refresh tokens are single-use: each successful `POST /api/refresh-token/` rotates and revokes the supplied refresh token.
+- `POST /api/logout/` revokes the current access token and the token supplied in the `X-Refresh-Token` header. The frontend sends both headers before clearing its session.
+- Sessions issued before token types were introduced must sign in again.
+- `GET` and `PUT /api/preferences/` read and update the signed-in user's settings. The first GET reports `initialized: false` when the user has not saved preferences yet; the frontend then persists its existing local settings.
+- `/api/data/chat/` and `/api/data/usersearchhistory/` are administrator-only. Record-specific and per-user data routes require authentication and restrict non-admin users to their own records.
+- Apply the Alembic migration with `alembic upgrade head` before deploying these changes. The migration adds preference storage and persistent token revocation.

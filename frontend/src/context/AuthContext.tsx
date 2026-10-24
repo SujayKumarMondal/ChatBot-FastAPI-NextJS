@@ -57,6 +57,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 🔹 Sign Out
   const signOut = () => {
+    const accessToken = sessionStorage.getItem("access_token");
+    const refreshToken = sessionStorage.getItem("refresh_token");
+    if (accessToken || refreshToken) {
+      const headers: Record<string, string> = {};
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      if (refreshToken) headers["X-Refresh-Token"] = refreshToken;
+      void fetch(`${API_BASE_URL}/api/logout/`, {
+        method: "POST",
+        headers,
+      }).then(async (response) => {
+        if (!response.ok) {
+          console.error("Server-side logout failed:", await response.text());
+        }
+      }).catch((error: unknown) => {
+        console.error("Unable to revoke the current session:", error);
+      });
+    }
+
     setUser(null);
     setToken(null);
     sessionStorage.removeItem("user");

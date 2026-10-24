@@ -38,7 +38,7 @@ interface IChat {
 
 export function AppSidebar() {
   const [allChats, setAllChats] = useState<IChat[]>([]);
-  const { user, isLoading, refreshTrigger } = useAuth();
+  const { user, token, isLoading, refreshTrigger } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const isMountedRef = useRef(true);
@@ -60,7 +60,7 @@ export function AppSidebar() {
     }
 
     // Check if we have a user with an ID
-    if (!user || !user.id) {
+    if (!user || !user.id || !token) {
       console.log("❌ No user available, clearing chats", { user, userId: user?.id });
       setAllChats([]);
       return;
@@ -68,7 +68,7 @@ export function AppSidebar() {
     
     try {
       console.log("🔄 Fetching chats for user:", user.id);
-      const chatsData = await getChatsByUserId(user.id);
+      const chatsData = await getChatsByUserId(user.id, token);
       console.log("📥 Received chats data from API:", chatsData, "Type:", typeof chatsData, "Is Array:", Array.isArray(chatsData), "Length:", chatsData?.length);
       
       // Sort chats by created_at in descending order (latest first)
@@ -83,7 +83,7 @@ export function AppSidebar() {
       console.error("❌ Error fetching chats:", error);
       setAllChats([]);
     }
-  }, [user, isLoading]);
+  }, [user, token, isLoading]);
 
   // Fetch chats when user changes or when refreshTrigger changes
   useEffect(() => {
