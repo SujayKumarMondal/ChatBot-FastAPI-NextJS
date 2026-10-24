@@ -686,28 +686,41 @@ export default function Homepage() {
           
           {isFreshChat && (
             <motion.section
-              className="welcome-panel mx-auto flex w-full max-w-3xl flex-col items-center px-2 pb-3 pt-5 text-center sm:pt-8"
+              className="welcome-panel mx-auto flex w-full max-w-5xl flex-col items-center px-2 pb-3 pt-5 text-center sm:pt-8"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-card text-primary">
-                <Sparkles size={20} strokeWidth={1.8} />
+              <div className="welcome-hero">
+                <div className="welcome-copy">
+                  <div className="welcome-mark mb-5 flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-card text-primary">
+                    <Sparkles size={20} strokeWidth={1.8} />
+                  </div>
+                  <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-[11px] font-medium tracking-wide text-muted-foreground">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    Your AI workspace
+                  </p>
+                  <h1 className="max-w-2xl text-balance text-3xl font-semibold leading-[1.16] tracking-[-0.035em] sm:text-4xl">
+                    {user.first_name ? `Good to see you! ${user.first_name}` : "What can I help you with?"}
+                  </h1>
+                </div>
+                {/* <div className="welcome-preview" aria-hidden="true">
+                  <div className="welcome-preview-heading">
+                    <span className="welcome-preview-avatar"><Sparkles size={17} /></span>
+                    <span><strong>ChatPaat</strong><small>Ready when you are</small></span>
+                    <span className="welcome-preview-status" />
+                  </div>
+                  <div className="welcome-preview-message">
+                    Let’s break that idea into simple, doable steps.
+                  </div>
+                  <div className="welcome-preview-prompt">Can you help me get started?</div>
+                  <div className="welcome-preview-footer">
+                    <span>Ask a question, share a file, or explore an idea</span>
+                    <span><ArrowUpRight size={15} /></span>
+                  </div>
+                </div> */}
               </div>
-              <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-[11px] font-medium tracking-wide text-muted-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                Your AI workspace
-              </p>
-              <h1 className="max-w-2xl text-balance text-3xl font-semibold leading-[1.16] tracking-[-0.035em] sm:text-4xl">
-                {user.first_name ? `Good to see you, ${user.first_name}.` : "What can I help you with?"}
-                <span className="mt-2 block text-primary">
-                  Let’s make something clear.
-                </span>
-              </h1>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
-                Think through a problem, create something new, or bring a document to explore together.
-              </p>
-              <div className="mt-5 grid w-full max-w-2xl gap-2 sm:grid-cols-2">
+              <div className="mt-5 grid w-full max-w-4xl gap-2 sm:grid-cols-2 lg:mt-7">
                 {promptSuggestions.map(({ icon: Icon, title, prompt }, index) => (
                   <motion.button
                     key={title}

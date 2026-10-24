@@ -6,10 +6,12 @@ import {
   Settings,
   History,
   Info,
+  Layers3,
   Github,
   Linkedin,
   Globe,
   Briefcase,
+  LogOut,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarTrigger } from "./ui/sidebar";
@@ -64,16 +66,16 @@ export default function Navbar() {
 
             {user && <SidebarTrigger />}
 
-            <div className="hidden sm:flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div className="flex items-center gap-2 min-w-0">
 
                 <img
                   src="/brand_logo.png"
                   alt="ChatPaat Logo"
-                  className="h-9 w-9 transition-transform duration-200 hover:scale-105"
+                  className="h-8 w-8 shrink-0 transition-transform duration-200 hover:scale-105 sm:h-9 sm:w-9"
                 />
 
-                <div className="flex flex-col min-w-0">
+                <div className="hidden min-w-0 flex-col min-[380px]:flex">
                   <span className="text-base font-semibold tracking-tight text-foreground">
                     ChatPaat
                   </span>
@@ -126,6 +128,19 @@ export default function Navbar() {
 
                 </div>
 
+                {/* OUR SERVICES */}
+                <div className="relative group">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2 text-xs md:text-sm"
+                    title="Our Service"
+                    onClick={() => navigate("/services")}
+                  >
+                    <Layers3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Our Service</span>
+                  </Button>
+                </div>
 
                 {/* DEVELOPER */}
                 <div className="relative" ref={developerRef}>
@@ -264,8 +279,11 @@ export default function Navbar() {
                     size="sm"
                     className="hover:bg-destructive/20 hover:text-destructive transition-all text-xs rounded-full"
                     onClick={() => setShowSignOutDialog(true)}
+                    aria-label="Sign out"
+                    title="Sign out"
                   >
-                    Sign Out
+                    <LogOut className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Sign Out</span>
                   </Button>
 
 
