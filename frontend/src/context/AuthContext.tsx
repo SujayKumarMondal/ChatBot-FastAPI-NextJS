@@ -16,7 +16,7 @@ interface User {
   image?: string;
   first_name?: string;
   last_name?: string;
-  oauth_provider?: "google";
+  oauth_provider?: "google" | "github";
 }
 
 interface AuthContextType {

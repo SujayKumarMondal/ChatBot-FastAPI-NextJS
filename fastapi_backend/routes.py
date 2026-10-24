@@ -4,6 +4,7 @@ import logging
 import uuid
 from datetime import datetime, timedelta
 import requests
+import certifi
 import base64
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status, Header, UploadFile, File, Query
@@ -61,6 +62,18 @@ def get_google_oauth_config() -> tuple[str, str]:
 
     if not client_id or not client_secret:
         raise RuntimeError("Google OAuth client ID/secret are not configured.")
+
+    return client_id, client_secret
+
+
+def get_github_oauth_config() -> tuple[str, str]:
+    """Resolve GitHub OAuth credentials from backend environment variables."""
+    load_dotenv(BACKEND_DIR / ".env", override=False)
+    client_id = (os.getenv("GITHUB_CLIENT_ID") or "").strip()
+    client_secret = (os.getenv("GITHUB_CLIENT_SECRET") or "").strip()
+
+    if not client_id or not client_secret:
+        raise RuntimeError("GitHub OAuth client ID/secret are not configured.")
 
     return client_id, client_secret
 
@@ -370,9 +383,193 @@ def _get_google_userinfo(access_token: str) -> dict:
     return resp.json()
 
 
+def _exchange_github_code(code: str, redirect_uri: str) -> dict:
+    client_id, client_secret = get_github_oauth_config()
+    response = requests.post(
+        "https://github.com/login/oauth/access_token",
+        data={
+            "code": code,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri,
+        },
+        headers={"Accept": "application/json"},
+        timeout=10,
+        verify=_github_ca_bundle(),
+    )
+    response.raise_for_status()
+    token_data = response.json()
+    if token_data.get("error") or not token_data.get("access_token"):
+        raise ValueError("GitHub did not return an access token.")
+    return token_data
+
+
+def _get_github_userinfo(access_token: str) -> dict:
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    response = requests.get(
+        "https://api.github.com/user",
+        headers=headers,
+        timeout=10,
+        verify=_github_ca_bundle(),
+    )
+    response.raise_for_status()
+    info = response.json()
+
+    emails_response = requests.get(
+        "https://api.github.com/user/emails",
+        headers=headers,
+        timeout=10,
+        verify=_github_ca_bundle(),
+    )
+    emails_response.raise_for_status()
+    emails = emails_response.json()
+    info["email"] = next(
+        (
+            item.get("email")
+            for item in emails
+            if item.get("primary") and item.get("verified") and item.get("email")
+        ),
+        None,
+    )
+
+    return info
+
+
+def _github_ca_bundle() -> str:
+    """Return a verified CA bundle, with an override for managed/custom CAs."""
+    configured_bundle = (os.getenv("GITHUB_CA_BUNDLE") or "").strip()
+    if configured_bundle:
+        bundle_path = Path(configured_bundle).expanduser()
+        if not bundle_path.is_file():
+            raise RuntimeError("GITHUB_CA_BUNDLE must point to an existing CA bundle file.")
+        return str(bundle_path)
+    return certifi.where()
+
+
 class GoogleExchangeRequest(BaseModel):
-    code: str
+    code: str = Field(..., min_length=1, max_length=4096)
     redirect_uri: Optional[str] = None
+
+
+class GitHubExchangeRequest(BaseModel):
+    code: str = Field(..., min_length=1, max_length=4096)
+    redirect_uri: Optional[str] = None
+
+
+@router.get("/api/auth/github/config/", tags=["Authentication"])
+def github_oauth_config():
+    """Return the public GitHub OAuth client ID used to start browser sign-in."""
+    try:
+        client_id, _ = get_github_oauth_config()
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        ) from exc
+    return {"client_id": client_id}
+
+
+@router.post("/api/auth/github/exchange/", tags=["Authentication"])
+def github_exchange(req: GitHubExchangeRequest, db: Session = Depends(get_db)):
+    """Exchange a GitHub authorization code for local JWTs and a ChatPaat user."""
+    redirect_uri = req.redirect_uri or f"{FRONTEND_URL}/oauth-callback"
+    provider_stage = "GitHub token exchange"
+    try:
+        token_data = _exchange_github_code(req.code, redirect_uri)
+        provider_stage = "GitHub profile lookup"
+        info = _get_github_userinfo(token_data["access_token"])
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        ) from exc
+    except requests.exceptions.SSLError as exc:
+        logger.exception("%s failed TLS certificate validation", provider_stage)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                f"{provider_stage} failed because the backend could not validate "
+                "GitHub's TLS certificate. Configure GITHUB_CA_BUNDLE with the "
+                "required CA certificate bundle if your host uses a custom CA."
+            ),
+        ) from exc
+    except requests.RequestException as exc:
+        logger.exception("%s failed: %s", provider_stage, type(exc).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"{provider_stage} failed due to a network or provider error. Please try again.",
+        ) from exc
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="GitHub did not return a valid sign-in response.",
+        ) from exc
+
+    github_id = info.get("id")
+    email = _normalize_email(info.get("email") or "")
+    if not github_id or not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A verified email address is required to sign in with GitHub.",
+        )
+
+    user = db.query(CustomUser).filter(
+        CustomUser.oauth_provider == "github",
+        CustomUser.oauth_subject == str(github_id),
+    ).first()
+    if not user:
+        user = db.query(CustomUser).filter(
+            func.lower(CustomUser.email) == email
+        ).first()
+
+    display_name = (info.get("name") or "").strip()
+    if not user:
+        username = _ensure_unique_username(db, info.get("login") or email.split("@")[0])
+        user = CustomUser(
+            username=username,
+            email=email,
+            first_name=display_name or info.get("login") or username,
+            image=info.get("avatar_url"),
+            oauth_provider="github",
+            oauth_subject=str(github_id),
+        )
+        db.add(user)
+    else:
+        user.oauth_provider = "github"
+        user.oauth_subject = str(github_id)
+        user.first_name = display_name or user.first_name
+        user.image = info.get("avatar_url") or user.image
+        user.email = email
+
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This GitHub account could not be linked to the existing user.",
+        ) from exc
+    db.refresh(user)
+
+    access = create_access_token({"sub": str(user.id)})
+    refresh = create_refresh_token({"sub": str(user.id)})
+    return {
+        "access": access,
+        "refresh": refresh,
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "image": user.image,
+            "oauth_provider": "github",
+        },
+    }
 
 
 @router.post("/api/auth/google/exchange/", tags=["Authentication"])

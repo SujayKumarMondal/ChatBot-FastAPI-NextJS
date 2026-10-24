@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getApiBaseUrl } from '../lib/config';
-import { consumeGoogleOAuthState } from '../lib/googleOAuth';
+import { consumeOAuthProviderState } from '../lib/googleOAuth';
 
 const OAuthCallback = () => {
   const navigate = useNavigate();
@@ -16,24 +16,30 @@ const OAuthCallback = () => {
     exchangeAttemptedRef.current = true;
 
     const code = searchParams.get('code');
-    const provider = 'google';
+    const provider = consumeOAuthProviderState(searchParams.get('state'));
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
 
-    if (!consumeGoogleOAuthState(searchParams.get('state'))) {
-      navigate('/', { replace: true, state: { error: 'Google Sign-In could not be verified. Please try again.' } });
+    if (!provider) {
+      navigate('/', { replace: true, state: { error: 'Sign-In could not be verified. Please try again.' } });
       return;
     }
 
     if (error) {
       console.error('OAuth error:', error, errorDescription);
-      navigate('/', { replace: true, state: { error: errorDescription || error } });
+      navigate('/', {
+        replace: true,
+        state: { error: errorDescription || `${provider === 'github' ? 'GitHub' : 'Google'} sign-in was cancelled.` },
+      });
       return;
     }
 
     if (!code) {
       console.error('No authorization code received');
-      navigate('/', { replace: true, state: { error: 'No authorization code received' } });
+      navigate('/', {
+        replace: true,
+        state: { error: `No authorization code received from ${provider === 'github' ? 'GitHub' : 'Google'}.` },
+      });
       return;
     }
 

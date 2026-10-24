@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Chrome } from "lucide-react";
-import { startGoogleOAuthRedirect } from "../lib/googleOAuth";
+import { Chrome, Github } from "lucide-react";
+import { startGithubOAuthRedirect, startGoogleOAuthRedirect } from "../lib/googleOAuth";
 
 export default function SignInPage() {
   const location = useLocation();
   const [error, setError] = useState("");
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [signingInWith, setSigningInWith] = useState<"google" | "github" | null>(null);
 
   useEffect(() => {
     const state = location.state as { error?: string } | null;
@@ -16,14 +16,19 @@ export default function SignInPage() {
     }
   }, [location.state]);
 
-  const startOAuth = async () => {
+  const startOAuth = async (provider: "google" | "github") => {
     setError("");
-    setIsSigningIn(true);
+    setSigningInWith(provider);
     try {
-      await startGoogleOAuthRedirect();
+      if (provider === "google") {
+        await startGoogleOAuthRedirect();
+      } else {
+        await startGithubOAuthRedirect();
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to start Google Sign-In.");
-      setIsSigningIn(false);
+      const providerName = provider === "github" ? "GitHub" : "Google";
+      setError(err instanceof Error ? err.message : `Unable to start ${providerName} Sign-In.`);
+      setSigningInWith(null);
     }
   };
 
@@ -53,15 +58,29 @@ export default function SignInPage() {
           type="button"
           variant="secondary"
           className="w-full mt-2"
-          onClick={startOAuth}
-          disabled={isSigningIn}
+          onClick={() => startOAuth("google")}
+          disabled={signingInWith !== null}
         >
-          {isSigningIn ? (
+          {signingInWith === "google" ? (
             <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true" />
           ) : (
             <Chrome className="mr-2 h-4 w-4" />
           )}
-          {isSigningIn ? "Connecting to Google..." : "Sign In with Google"}
+          {signingInWith === "google" ? "Connecting to Google..." : "Sign In with Google"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => startOAuth("github")}
+          disabled={signingInWith !== null}
+        >
+          {signingInWith === "github" ? (
+            <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true" />
+          ) : (
+            <Github className="mr-2 h-4 w-4" />
+          )}
+          {signingInWith === "github" ? "Connecting to GitHub..." : "Continue with GitHub"}
         </Button>
       </div>
     </div>

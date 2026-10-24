@@ -21,6 +21,15 @@ Frontend
 - Set `VITE_GOOGLE_CLIENT_ID` in the frontend environment (or edit `SignIn.tsx` fallback).
 - The frontend includes `/oauth-callback` which exchanges the code and signs the user in.
 
+GitHub OAuth setup
+
+- Set `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` in the backend environment. Never place the GitHub client secret in frontend variables or source.
+- In the GitHub OAuth App settings, set the callback URL to `{FRONTEND_URL}/oauth-callback` (for local development, `http://localhost:5173/oauth-callback`).
+- The sign-in page fetches the public client ID from `GET /api/auth/github/config/`, redirects to GitHub with `read:user user:email` scope and an OAuth state value, and returns to the shared `/oauth-callback`.
+- The callback validates state and sends the one-time code to `POST /api/auth/github/exchange/`. The backend exchanges it, checks GitHub's primary verified email, creates or updates the local account, and returns ChatPaat JWTs.
+- GitHub's primary verified email is required. Configure the OAuth App callback URL to exactly match the frontend callback used to start sign-in.
+- The backend validates GitHub TLS using the maintained `certifi` CA bundle. If the hosting environment uses a private or intercepted CA, set `GITHUB_CA_BUNDLE` to the absolute path of its PEM bundle; do not disable certificate verification. Rebuild/redeploy the backend after dependency changes.
+
 Retrieval-augmented chat
 
 - Upload an authenticated file to `POST /api/rag/documents/` as multipart field `file`. Supported types are PDF, TXT, CSV, DOCX, PNG, JPG, and JPEG; each upload is limited to 10 MB.

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Chrome, FileText, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
-import { startGoogleOAuthRedirect } from "../lib/googleOAuth";
+import { Chrome, FileText, Github, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
+import { startGithubOAuthRedirect, startGoogleOAuthRedirect } from "../lib/googleOAuth";
 
 export default function LoginPrompt() {
   const location = useLocation();
   const [error, setError] = useState("");
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [signingInWith, setSigningInWith] = useState<"google" | "github" | null>(null);
 
   useEffect(() => {
     const state = location.state as { error?: string } | null;
@@ -16,14 +16,19 @@ export default function LoginPrompt() {
     }
   }, [location.state]);
 
-  const startOAuth = async () => {
+  const startOAuth = async (provider: "google" | "github") => {
     setError("");
-    setIsSigningIn(true);
+    setSigningInWith(provider);
     try {
-      await startGoogleOAuthRedirect();
+      if (provider === "google") {
+        await startGoogleOAuthRedirect();
+      } else {
+        await startGithubOAuthRedirect();
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to start Google Sign-In.");
-      setIsSigningIn(false);
+      const providerName = provider === "github" ? "GitHub" : "Google";
+      setError(err instanceof Error ? err.message : `Unable to start ${providerName} Sign-In.`);
+      setSigningInWith(null);
     }
   };
 
@@ -118,18 +123,31 @@ export default function LoginPrompt() {
 
           <Button
             type="button"
-            onClick={startOAuth}
-            disabled={isSigningIn}
+            onClick={() => startOAuth("google")}
+            disabled={signingInWith !== null}
             className="auth-signin-button w-full"
           >
-            {isSigningIn ? (
+            {signingInWith === "google" ? (
               <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true" />
             ) : (
               <Chrome className="mr-2 h-4 w-4" />
             )}
-            {isSigningIn ? "Connecting to Google..." : "Continue with Google"}
+            {signingInWith === "google" ? "Connecting to Google..." : "Continue with Google"}
           </Button>
-
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => startOAuth("github")}
+            disabled={signingInWith !== null}
+            className="w-full"
+          >
+            {signingInWith === "github" ? (
+              <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true" />
+            ) : (
+              <Github className="mr-2 h-4 w-4" />
+            )}
+            {signingInWith === "github" ? "Connecting to GitHub..." : "Continue with GitHub"}
+          </Button>
           <p className="auth-card-terms">
             By continuing, you agree to use ChatPaat responsibly.
           </p>
