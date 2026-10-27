@@ -2098,6 +2098,7 @@ select {
     .auth-screen {
         min-height: 100svh;
         padding: 1rem;
+        align-items: flex-start;
     }
 
     .auth-card {
@@ -2105,12 +2106,53 @@ select {
     }
 
     .auth-landing {
+        display: flex;
+        flex-direction: column;
         grid-template-columns: minmax(0, 1fr);
-        gap: 1.5rem;
+        gap: 1rem;
+    }
+
+    .auth-card {
+        order: -1;
+        padding: 1.15rem;
+    }
+
+    .auth-card-brand {
+        margin-bottom: 0.55rem;
+    }
+
+    .auth-card-brand img {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    .auth-card h2 {
+        margin-top: 0.25rem;
+    }
+
+    .auth-card-copy {
+        margin-top: 0.45rem;
+    }
+
+    .auth-card-disclaimer {
+        margin-top: 0.65rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .auth-card > .auth-signin-button {
+        min-height: 2.85rem;
+    }
+
+    .auth-card-terms {
+        margin-top: 0.7rem;
     }
 
     .auth-intro {
         text-align: center;
+    }
+
+    .auth-preview {
+        display: none;
     }
 
     .auth-intro-eyebrow {
@@ -2133,7 +2175,7 @@ select {
 
     .auth-benefits {
         justify-content: center;
-        margin-top: 1rem;
+        margin-top: 0.75rem;
     }
 
     .auth-benefits span {
