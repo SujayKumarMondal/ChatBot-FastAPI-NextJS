@@ -1,445 +1,1275 @@
-<!DOCTYPE html>
-
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090e1b" />
+    <meta
+      name="description"
+      content="ChatPaat is your AI workspace for thoughtful conversations, document-grounded answers, and a more personal way to work."
+    />
+    <title>ChatPaat — Your ideas, with an AI by your side</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090e1b;
+        --surface: #10182a;
+        --surface-raised: #141f34;
+        --text: #f3f6ff;
+        --muted: #a0adc4;
+        --subtle: #71809c;
+        --line: rgba(165, 184, 221, 0.13);
+        --blue: #79a7ff;
+        --cyan: #62e2d0;
+        --violet: #ad91ff;
+        --radius: 22px;
+      }
 
-<title>ChatPaat — AI Chat Assistant</title>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
 
-<meta name="description"
-content="ChatPaat is a full-stack AI-powered chat assistant built with FastAPI, React, PostgreSQL and Groq AI.">
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 92px;
+      }
 
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
+      body {
+        min-width: 320px;
+        margin: 0;
+        color: var(--text);
+        background:
+          radial-gradient(ellipse at 78% 5%, rgba(80, 105, 212, 0.15), transparent 31rem),
+          radial-gradient(ellipse at 8% 35%, rgba(39, 177, 174, 0.08), transparent 28rem),
+          var(--bg);
+        font-family: "DM Sans", sans-serif;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
 
-body{
-    font-family:Inter,Arial,sans-serif;
-    background:#0f172a;
-    color:#e2e8f0;
-    line-height:1.6;
-}
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
 
-a{color:inherit;text-decoration:none}
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
 
-.hero{
-    text-align:center;
-    padding:70px 20px;
-    background:
-        radial-gradient(circle at top,#667eea55,transparent 40%),
-        #0f172a;
-}
+      button:focus-visible,
+      a:focus-visible {
+        outline: 3px solid var(--cyan);
+        outline-offset: 4px;
+      }
 
-.logo{
-    width:90px;
-    height:90px;
-    border-radius:22px;
-    margin-bottom:20px;
-}
+      svg {
+        display: block;
+      }
 
-.hero h1{
-    font-size:clamp(2.5rem,7vw,4.5rem);
-    background:linear-gradient(135deg,#667eea,#f093fb);
-    -webkit-background-clip:text;
-    color:transparent;
-}
+      .icon-defs {
+        position: absolute;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+      }
 
-.hero p{
-    max-width:650px;
-    margin:15px auto;
-    color:#94a3b8;
-    font-size:1.1rem;
-}
+      .wrap {
+        width: min(1120px, calc(100% - 48px));
+        margin-inline: auto;
+      }
 
-.buttons{
-    display:flex;
-    justify-content:center;
-    gap:12px;
-    flex-wrap:wrap;
-    margin-top:28px;
-}
+      .topbar {
+        position: sticky;
+        z-index: 10;
+        top: 0;
+        border-bottom: 1px solid rgba(165, 184, 221, 0.08);
+        background: rgba(9, 14, 27, 0.78);
+        backdrop-filter: blur(18px);
+      }
 
-.btn{
-    padding:12px 22px;
-    border-radius:10px;
-    font-weight:600;
-    background:linear-gradient(135deg,#667eea,#764ba2);
-    transition:.25s;
-}
+      .nav {
+        display: flex;
+        min-height: 76px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
 
-.btn:hover{transform:translateY(-3px)}
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 11px;
+        font-family: Manrope, sans-serif;
+        font-size: 1.12rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
 
-.btn.secondary{
-    background:#1e293b;
-    border:1px solid #334155;
-}
+      .brand-mark {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border: 1px solid rgba(121, 167, 255, 0.38);
+        border-radius: 13px;
+        background: linear-gradient(145deg, rgba(121, 167, 255, 0.22), rgba(98, 226, 208, 0.13));
+        color: var(--cyan);
+        box-shadow: 0 7px 26px rgba(67, 117, 211, 0.15);
+      }
 
-/* Developer links */
-.developer{
-    display:flex;
-    justify-content:center;
-    gap:12px;
-    margin-top:22px;
-}
+      .brand-mark svg {
+        width: 21px;
+        height: 21px;
+      }
 
-.developer a{
-    width:42px;
-    height:42px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border:1px solid #334155;
-    border-radius:50%;
-    background:#111827;
-    color:#a5b4fc;
-    font-size:19px;
-    transition:.25s;
-}
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
 
-.developer a:hover{
-    transform:translateY(-3px);
-    background:#1e293b;
-    color:#f093fb;
-}
+      .nav-links a,
+      .footer-links a {
+        transition: color 160ms ease;
+      }
 
-main{
-    max-width:1000px;
-    margin:auto;
-    padding:40px 20px;
-}
+      .nav-links a:hover,
+      .footer-links a:hover {
+        color: var(--text);
+      }
 
-section{
-    background:#111827;
-    border:1px solid #1e293b;
-    border-radius:18px;
-    padding:30px;
-    margin-bottom:20px;
-}
+      .button {
+        display: inline-flex;
+        min-height: 46px;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 0 19px;
+        border: 1px solid transparent;
+        border-radius: 13px;
+        background: linear-gradient(110deg, #7ea8ff, #8c9aff 55%, #9d8aff);
+        color: #0a1120;
+        font-size: 0.91rem;
+        font-weight: 700;
+        box-shadow: 0 9px 26px rgba(87, 123, 231, 0.2);
+        transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+      }
 
-h2{
-    margin-bottom:15px;
-    color:#f8fafc;
-}
+      .button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 13px 32px rgba(87, 123, 231, 0.3);
+      }
 
-h2 span{color:#818cf8}
+      .button svg {
+        width: 17px;
+        height: 17px;
+      }
 
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-    gap:15px;
-}
+      .button-quiet {
+        border-color: var(--line);
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--text);
+        box-shadow: none;
+      }
 
-.card{
-    padding:20px;
-    border-radius:12px;
-    background:#0f172a;
-    border:1px solid #1e293b;
-}
+      .button-quiet:hover {
+        border-color: rgba(121, 167, 255, 0.45);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+      }
 
-.card h3{
-    margin-bottom:8px;
-    color:#c4b5fd;
-}
+      .hero {
+        position: relative;
+        display: grid;
+        min-height: 610px;
+        grid-template-columns: 1.02fr 0.98fr;
+        align-items: center;
+        gap: clamp(42px, 7vw, 90px);
+        padding-block: 78px 92px;
+      }
 
-.card p,li{color:#94a3b8}
+      .hero-copy {
+        position: relative;
+        z-index: 1;
+      }
 
-ul{padding-left:20px}
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 7px 12px;
+        border: 1px solid rgba(98, 226, 208, 0.19);
+        border-radius: 999px;
+        background: rgba(98, 226, 208, 0.055);
+        color: #a4f0e4;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.105em;
+        text-transform: uppercase;
+      }
 
-li{margin:6px 0}
+      .eyebrow svg {
+        width: 15px;
+        height: 15px;
+      }
 
-.stack{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-}
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
 
-.tag{
-    padding:7px 12px;
-    border-radius:8px;
-    background:#1e293b;
-    color:#cbd5e1;
-    font-size:.9rem;
-}
+      h1,
+      h2,
+      h3 {
+        font-family: Manrope, sans-serif;
+      }
 
-.demo{text-align:center}
+      h1 {
+        max-width: 650px;
+        margin: 23px 0 19px;
+        font-size: clamp(3rem, 6.4vw, 5.2rem);
+        font-weight: 800;
+        letter-spacing: -0.075em;
+        line-height: 1.04;
+      }
 
-.demo a{
-    display:inline-block;
-    margin-top:15px;
-    color:#a5b4fc;
-    font-weight:700;
-}
+      .gradient-text {
+        background: linear-gradient(100deg, #91b9ff 6%, #88dbec 51%, #bea7ff 96%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
 
-footer{
-    text-align:center;
-    padding:35px 20px;
-    color:#64748b;
-    border-top:1px solid #1e293b;
-}
+      .hero-copy > p {
+        max-width: 540px;
+        margin-bottom: 27px;
+        color: var(--muted);
+        font-size: clamp(1rem, 1.5vw, 1.1rem);
+      }
 
-footer strong{color:#c4b5fd}
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
 
-footer .developer{margin-top:15px}
+      .hero-note {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: 20px;
+        color: var(--subtle);
+        font-size: 0.8rem;
+      }
 
-@media(max-width:600px){
-    .hero{padding:55px 15px}
-    section{padding:22px}
-}
-</style>
+      .hero-note svg {
+        width: 16px;
+        height: 16px;
+        color: var(--cyan);
+      }
 
-</head>
+      .showcase {
+        position: relative;
+        max-width: 490px;
+        justify-self: end;
+        padding: 1px;
+        border-radius: 27px;
+        background: linear-gradient(145deg, rgba(121, 167, 255, 0.6), rgba(98, 226, 208, 0.12) 48%, rgba(173, 145, 255, 0.4));
+        box-shadow: 0 32px 90px rgba(0, 0, 0, 0.4), 0 0 65px rgba(80, 117, 224, 0.12);
+        transform: rotate(1.3deg);
+      }
 
-<body>
+      .chat-window {
+        overflow: hidden;
+        border-radius: 26px;
+        background: linear-gradient(145deg, #111a2d, #0d1423 76%);
+      }
 
-<!-- HERO -->
+      .chat-top {
+        display: flex;
+        min-height: 64px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 19px;
+        border-bottom: 1px solid var(--line);
+      }
 
-<header class="hero">
+      .chat-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
 
+      .bot-avatar,
+      .user-avatar {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 12px;
+      }
 
+      .bot-avatar {
+        background: linear-gradient(145deg, rgba(121, 167, 255, 0.23), rgba(98, 226, 208, 0.15));
+        color: var(--cyan);
+      }
 
+      .bot-avatar svg,
+      .user-avatar svg {
+        width: 18px;
+        height: 18px;
+      }
 
-<h1>ChatPaat</h1>
+      .chat-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: #a8b5cc;
+        font-size: 0.72rem;
+      }
 
-<p>
-    A modern AI-powered chat assistant for intelligent,
-    secure and persistent conversations.
-</p>
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #64d9b1;
+        box-shadow: 0 0 12px rgba(100, 217, 177, 0.8);
+      }
 
-<div class="buttons">
-    <a class="btn"
-       href="https://chatpaat.netlify.app/"
-       target="_blank">
-        🚀 Live Demo
-    </a>
+      .chat-content {
+        display: grid;
+        gap: 19px;
+        padding: 25px 20px 19px;
+      }
 
-    <a class="btn secondary"
-       href="/docs"
-       target="_blank">
-        🔌 API Docs
-    </a>
-</div>
+      .message {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
 
-<!-- DEVELOPER -->
+      .message.user {
+        justify-content: flex-end;
+      }
 
-<div class="developer">
+      .message-copy {
+        max-width: 82%;
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        border-radius: 5px 15px 15px;
+        background: rgba(255, 255, 255, 0.045);
+        color: #d7dfef;
+        font-size: 0.82rem;
+        line-height: 1.6;
+      }
 
+      .message.user .message-copy {
+        border-color: rgba(121, 167, 255, 0.16);
+        border-radius: 15px 5px 15px 15px;
+        background: rgba(100, 135, 222, 0.17);
+        color: #edf2ff;
+      }
 
-<a href="https://skm10-portfolio.netlify.app/"
-   target="_blank"
-   rel="noopener noreferrer"
-   title="Portfolio"
-   aria-label="Portfolio">
-    <svg viewBox="0 0 24 24" aria-hidden="true"> 
-        <path d="M9 3h6a2 2 0 0 1 2 2v2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3V5a2 2 0 0 1 2-2zm0 4h6V5H9v2zm11 4h-6v1h-4v-1H4v7h16v-7zm-6 0h-4v1h4v-1z"/> 
+      .user-avatar {
+        width: 30px;
+        height: 30px;
+        border: 1px solid rgba(173, 145, 255, 0.22);
+        background: rgba(173, 145, 255, 0.13);
+        color: #d5c7ff;
+      }
+
+      .source-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 10px;
+        padding: 6px 9px;
+        border: 1px solid rgba(98, 226, 208, 0.17);
+        border-radius: 9px;
+        background: rgba(98, 226, 208, 0.06);
+        color: #9de8db;
+        font-size: 0.68rem;
+      }
+
+      .source-pill svg {
+        width: 13px;
+        height: 13px;
+      }
+
+      .chat-compose {
+        display: flex;
+        min-height: 50px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0 18px 18px;
+        padding: 8px 9px 8px 15px;
+        border: 1px solid rgba(165, 184, 221, 0.17);
+        border-radius: 15px;
+        background: rgba(4, 9, 18, 0.42);
+        color: #77859d;
+        font-size: 0.76rem;
+      }
+
+      .compose-tools {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .compose-tools svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .send-button {
+        display: grid;
+        width: 33px;
+        height: 33px;
+        place-items: center;
+        border-radius: 10px;
+        background: linear-gradient(145deg, #83aaff, #87d9dd);
+        color: #0b1422;
+      }
+
+      .send-button svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .float-card {
+        position: absolute;
+        right: -25px;
+        bottom: 57px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 15px;
+        border: 1px solid rgba(165, 184, 221, 0.15);
+        border-radius: 15px;
+        background: rgba(17, 26, 45, 0.96);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.28);
+        transform: rotate(-2deg);
+      }
+
+      .float-icon {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 11px;
+        background: rgba(173, 145, 255, 0.14);
+        color: #c4b0ff;
+      }
+
+      .float-icon svg {
+        width: 17px;
+        height: 17px;
+      }
+
+      .float-card strong,
+      .float-card small {
+        display: block;
+      }
+
+      .float-card strong {
+        font-size: 0.75rem;
+      }
+
+      .float-card small {
+        margin-top: 1px;
+        color: var(--muted);
+        font-size: 0.66rem;
+      }
+
+      .section {
+        padding-block: 84px;
+        border-top: 1px solid rgba(165, 184, 221, 0.08);
+      }
+
+      .section-heading {
+        max-width: 650px;
+        margin: 0 auto 39px;
+        text-align: center;
+      }
+
+      .section-kicker {
+        color: var(--cyan);
+        font-size: 0.73rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin: 10px 0 12px;
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        letter-spacing: -0.06em;
+        line-height: 1.15;
+      }
+
+      .section-heading p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 1rem;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .feature-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 222px;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: linear-gradient(145deg, rgba(19, 29, 49, 0.94), rgba(13, 20, 34, 0.92));
+        transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(121, 167, 255, 0.34);
+        background: linear-gradient(145deg, rgba(24, 37, 61, 0.98), rgba(13, 20, 34, 0.94));
+      }
+
+      .feature-icon {
+        display: grid;
+        width: 46px;
+        height: 46px;
+        place-items: center;
+        margin-bottom: 19px;
+        border: 1px solid rgba(121, 167, 255, 0.2);
+        border-radius: 15px;
+        background: linear-gradient(145deg, rgba(121, 167, 255, 0.16), rgba(98, 226, 208, 0.07));
+        color: var(--blue);
+      }
+
+      .feature-card:nth-child(3n + 2) .feature-icon {
+        border-color: rgba(98, 226, 208, 0.18);
+        background: rgba(98, 226, 208, 0.08);
+        color: var(--cyan);
+      }
+
+      .feature-card:nth-child(3n) .feature-icon {
+        border-color: rgba(173, 145, 255, 0.2);
+        background: rgba(173, 145, 255, 0.09);
+        color: var(--violet);
+      }
+
+      .feature-icon svg {
+        width: 21px;
+        height: 21px;
+      }
+
+      .feature-card h3 {
+        margin: 0 0 8px;
+        font-size: 1.02rem;
+        letter-spacing: -0.025em;
+      }
+
+      .feature-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.87rem;
+      }
+
+      .workflow {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        align-items: center;
+        gap: clamp(42px, 8vw, 100px);
+        padding: 73px clamp(24px, 6vw, 70px);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background:
+          radial-gradient(circle at 100% 0, rgba(121, 167, 255, 0.11), transparent 22rem),
+          linear-gradient(130deg, rgba(17, 26, 45, 0.97), rgba(13, 20, 34, 0.97));
+      }
+
+      .workflow-copy .section-kicker {
+        display: inline-block;
+        margin-bottom: 8px;
+      }
+
+      .workflow-copy h2 {
+        margin: 0 0 15px;
+        font-size: clamp(2rem, 4vw, 2.8rem);
+      }
+
+      .workflow-copy p {
+        margin-bottom: 22px;
+        color: var(--muted);
+      }
+
+      .workflow-list {
+        display: grid;
+        gap: 17px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .workflow-list li {
+        display: grid;
+        grid-template-columns: 42px 1fr;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .step-number {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        border: 1px solid rgba(121, 167, 255, 0.21);
+        border-radius: 13px;
+        background: rgba(121, 167, 255, 0.09);
+        color: #a9c5ff;
+        font-family: Manrope, sans-serif;
+        font-size: 0.83rem;
+        font-weight: 800;
+      }
+
+      .workflow-list strong {
+        display: block;
+        margin: 1px 0 2px;
+        font-size: 0.92rem;
+      }
+
+      .workflow-list span:last-child {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .trust-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        gap: 60px;
+      }
+
+      .trust-section h2 {
+        max-width: 480px;
+        margin-bottom: 14px;
+      }
+
+      .trust-section > div:first-child > p {
+        max-width: 500px;
+        margin-bottom: 0;
+        color: var(--muted);
+      }
+
+      .trust-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 13px;
+      }
+
+      .trust-item {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        min-height: 65px;
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        background: rgba(16, 24, 42, 0.76);
+        color: #d7e0f1;
+        font-size: 0.82rem;
+        font-weight: 600;
+      }
+
+      .trust-item svg {
+        width: 19px;
+        height: 19px;
+        flex: 0 0 auto;
+        color: var(--cyan);
+      }
+
+      .stack-section {
+        padding-top: 10px;
+      }
+
+      .stack-panel {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .stack-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 41px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(16, 24, 42, 0.74);
+        color: #c4cee0;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
+      .stack-tag span {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--blue);
+        box-shadow: 0 0 10px rgba(121, 167, 255, 0.6);
+      }
+
+      .cta {
+        position: relative;
+        overflow: hidden;
+        padding: 62px 24px;
+        border: 1px solid rgba(121, 167, 255, 0.22);
+        border-radius: 28px;
+        background:
+          radial-gradient(ellipse at 50% 115%, rgba(98, 226, 208, 0.16), transparent 50%),
+          linear-gradient(120deg, rgba(41, 58, 103, 0.55), rgba(31, 39, 76, 0.45));
+        text-align: center;
+      }
+
+      .cta h2 {
+        margin: 10px 0;
+      }
+
+      .cta p {
+        margin: 0 auto 23px;
+        color: var(--muted);
+      }
+
+      .cta .button {
+        min-width: 190px;
+      }
+
+      footer {
+        margin-top: 78px;
+        border-top: 1px solid rgba(165, 184, 221, 0.09);
+      }
+
+      .footer-inner {
+        display: flex;
+        min-height: 112px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .footer-copy {
+        color: var(--subtle);
+        font-size: 0.8rem;
+      }
+
+      .footer-copy strong {
+        display: block;
+        margin-bottom: 3px;
+        color: #e3eaf8;
+        font-family: Manrope, sans-serif;
+        font-size: 0.94rem;
+      }
+
+      .footer-links {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+      }
+
+      .footer-links a {
+        display: grid;
+        width: 39px;
+        height: 39px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: rgba(16, 24, 42, 0.72);
+        color: #aebbd2;
+      }
+
+      .footer-links a:hover {
+        border-color: rgba(121, 167, 255, 0.4);
+        color: var(--cyan);
+      }
+
+      .footer-links svg {
+        width: 17px;
+        height: 17px;
+      }
+
+      @media (max-width: 850px) {
+        .hero {
+          min-height: initial;
+          grid-template-columns: 1fr;
+          gap: 55px;
+          padding-block: 65px 76px;
+        }
+
+        .hero-copy {
+          max-width: 700px;
+          margin-inline: auto;
+          text-align: center;
+        }
+
+        .hero-copy > p {
+          margin-inline: auto;
+        }
+
+        .hero-actions,
+        .hero-note {
+          justify-content: center;
+        }
+
+        .showcase {
+          width: min(100%, 490px);
+          justify-self: center;
+        }
+
+        .feature-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .workflow {
+          grid-template-columns: 1fr;
+          gap: 35px;
+        }
+
+        .trust-section {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .wrap {
+          width: min(100% - 34px, 520px);
+        }
+
+        .nav {
+          min-height: 67px;
+        }
+
+        .nav-links {
+          display: none;
+        }
+
+        .nav > .button {
+          min-height: 40px;
+          padding-inline: 13px;
+          font-size: 0.8rem;
+        }
+
+        .hero {
+          gap: 43px;
+          padding-block: 54px 60px;
+        }
+
+        h1 {
+          font-size: clamp(2.75rem, 13vw, 4.1rem);
+        }
+
+        .hero-copy > p {
+          font-size: 0.96rem;
+        }
+
+        .hero-actions {
+          display: grid;
+          grid-template-columns: 1fr;
+        }
+
+        .hero-actions .button {
+          width: 100%;
+        }
+
+        .showcase {
+          transform: none;
+        }
+
+        .float-card {
+          right: -5px;
+          bottom: 45px;
+          padding: 9px 11px;
+        }
+
+        .section {
+          padding-block: 62px;
+        }
+
+        .section-heading {
+          margin-bottom: 27px;
+        }
+
+        .feature-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .feature-card {
+          min-height: auto;
+          padding: 21px;
+        }
+
+        .feature-icon {
+          margin-bottom: 14px;
+        }
+
+        .workflow {
+          width: 100%;
+          padding: 42px 22px;
+          border-radius: 0;
+          border-right: 0;
+          border-left: 0;
+        }
+
+        .trust-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .cta {
+          padding: 47px 20px;
+          border-radius: 21px;
+        }
+
+        .footer-inner {
+          min-height: 145px;
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: center;
+          gap: 16px;
+          padding-block: 22px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="i-sparkles" viewBox="0 0 24 24">
+        <path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-2-5.8L4 11l6-2.2L12 3Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+        <path d="m19 14 .9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14ZM5 3l.7 1.3L7 5l-1.3.7L5 7l-.7-1.3L3 5l1.3-.7L5 3Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" />
+      </symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24">
+        <path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
+      </symbol>
+      <symbol id="i-external" viewBox="0 0 24 24">
+        <path d="M14 4h6v6m-11 5L20 4M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
+      </symbol>
+      <symbol id="i-message" viewBox="0 0 24 24">
+        <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+        <path d="M8 12h8m-8-3h5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
+      </symbol>
+      <symbol id="i-file" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+        <path d="M14 2v6h6m-11 5h6m-6 4h6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+      </symbol>
+      <symbol id="i-history" viewBox="0 0 24 24">
+        <path d="M3 12a9 9 0 1 0 2.6-6.4L3 8m0-5v5h5m4-1v5l3 2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
+      </symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24">
+        <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+        <path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
+      </symbol>
+      <symbol id="i-palette" viewBox="0 0 24 24">
+        <path d="M12 3a9 9 0 1 0 0 18h1.2a2 2 0 0 0 1.5-3.3 1.7 1.7 0 0 1 1.3-2.8H18a3 3 0 0 0 3-3c0-5-4-8.9-9-8.9Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+        <path d="M7.5 11h.01M10 7.5h.01M15 8.5h.01M7.5 15h.01" stroke="currentColor" stroke-linecap="round" stroke-width="2.5" />
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.7" />
+        <path d="m20 20-4-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
+      </symbol>
+      <symbol id="i-user" viewBox="0 0 24 24">
+        <path d="M20 21a8 8 0 0 0-16 0m8-10a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+      </symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m14-7-5-5-5 5m5-5v12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+      </symbol>
+      <symbol id="i-send" viewBox="0 0 24 24">
+        <path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+      </symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24">
+        <rect x="4" y="10" width="16" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" />
+        <path d="M8 10V7a4 4 0 1 1 8 0v3m-4 5v2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
+      </symbol>
+      <symbol id="i-download" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m3-5 6 6 6-6m-6 6V3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+      </symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24">
+        <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" fill="none" stroke="currentColor" stroke-width="1.7" />
+        <path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.5.9l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.5-.9l-1.7.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-1.8l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.5-.9l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.5.9l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 1.7Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" transform="translate(-1 -2)" />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24">
+        <path d="m5 12 4 4L19 6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+      </symbol>
+      <symbol id="i-github" viewBox="0 0 24 24">
+        <path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.9a3.4 3.4 0 0 0-.9-2.7c3-.3 6.1-1.5 6.1-6.8a5.3 5.3 0 0 0-1.4-3.7 4.9 4.9 0 0 0-.1-3.7S17.5.9 15 2.8a13.4 13.4 0 0 0-7 0C5.5.9 4.3 1.2 4.3 1.2a4.9 4.9 0 0 0-.1 3.7 5.3 5.3 0 0 0-1.4 3.7c0 5.3 3.1 6.5 6.1 6.8a3.4 3.4 0 0 0-.9 2.7V22" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" />
+      </symbol>
+      <symbol id="i-linkedin" viewBox="0 0 24 24">
+        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6ZM2 9h4v12H2z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+        <circle cx="4" cy="4" r="2" fill="none" stroke="currentColor" stroke-width="1.7" />
+      </symbol>
+      <symbol id="i-briefcase" viewBox="0 0 24 24">
+        <rect x="3" y="7" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" />
+        <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-13 6h18m-11-1v2h4v-2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+      </symbol>
     </svg>
-</a>
 
-<a href="https://www.linkedin.com/in/sujay-kumar-mondal-a125481b7/"
-   target="_blank"
-   rel="noopener noreferrer"
-   title="LinkedIn"
-   aria-label="LinkedIn">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20.45 20.45h-3.56v-5.58c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.68H9.34V8.99h3.42v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.61 0 4.28 2.38 4.28 5.48v6.27zM5.32 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.1 20.45H3.55V8.99H7.1v11.46zM22.22 0H1.78C.8 0 0 .78 0 1.74v20.52C0 23.22.8 24 1.78 24h20.44c.98 0 1.78-.78 1.78-1.74V1.74C24 .78 23.2 0 22.22 0z"/>
-    </svg>
-</a>
+    <header class="topbar">
+      <nav class="nav wrap" aria-label="Main navigation">
+        <a class="brand" href="#" aria-label="ChatPaat home">
+          <span class="brand-mark"><svg aria-hidden="true"><use href="#i-sparkles" /></svg></span>
+          <span>ChatPaat</span>
+        </a>
+        <div class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#technology">Technology</a>
+        </div>
+        <a class="button button-quiet" href="https://chatpaat.netlify.app/" target="_blank" rel="noopener noreferrer">
+          Open ChatPaat <svg aria-hidden="true"><use href="#i-external" /></svg>
+        </a>
+      </nav>
+    </header>
 
-<a href="https://github.com/SujayKumarMondal"
-   target="_blank"
-   rel="noopener noreferrer"
-   title="GitHub"
-   aria-label="GitHub">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2.15c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.15 1.18A10.9 10.9 0 0 1 12 6.93c.97 0 1.94.13 2.85.37 2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.77.11 3.06.73.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.25 5.69.41.36.78 1.08.78 2.18v1.61c0 .3.21.65.79.54C20.21 21.38 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/>
-    </svg>
-</a>
+    <main>
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <span class="eyebrow"><svg aria-hidden="true"><use href="#i-sparkles" /></svg> Your personal AI workspace</span>
+          <h1 id="hero-title">A little more clarity.<br /><span class="gradient-text">A lot more possibility.</span></h1>
+          <p>
+            Chat, explore your documents, and keep your ideas organized in one thoughtful workspace
+            designed to make the everyday easier.
+          </p>
+          <div class="hero-actions">
+            <a class="button" href="https://chatpaat.netlify.app/" target="_blank" rel="noopener noreferrer">
+              Start a conversation <svg aria-hidden="true"><use href="#i-arrow" /></svg>
+            </a>
+            <a class="button button-quiet" href="https://chatbot-fastapi-nextjs.onrender.com/docs" target="_blank" rel="noopener noreferrer">
+              Explore the API <svg aria-hidden="true"><use href="#i-external" /></svg>
+            </a>
+          </div>
+          <div class="hero-note">
+            <svg aria-hidden="true"><use href="#i-shield" /></svg>
+            Your conversations are tied to your account and stay yours.
+          </div>
+        </div>
 
+        <div class="showcase" aria-label="Preview of a ChatPaat conversation">
+          <div class="chat-window">
+            <div class="chat-top">
+              <div class="chat-brand">
+                <span class="bot-avatar"><svg aria-hidden="true"><use href="#i-sparkles" /></svg></span>
+                ChatPaat assistant
+              </div>
+              <span class="chat-status"><i class="status-dot"></i> Ready to help</span>
+            </div>
+            <div class="chat-content">
+              <div class="message user">
+                <div class="message-copy">Can you help me find the main ideas in my project brief?</div>
+                <span class="user-avatar"><svg aria-hidden="true"><use href="#i-user" /></svg></span>
+              </div>
+              <div class="message">
+                <span class="bot-avatar"><svg aria-hidden="true"><use href="#i-sparkles" /></svg></span>
+                <div class="message-copy">
+                  Absolutely. I found three themes: your audience, the core problem, and the product direction.
+                  Want a concise summary or a more detailed breakdown?
+                  <div class="source-pill"><svg aria-hidden="true"><use href="#i-file" /></svg> Project-brief.pdf · source referenced</div>
+                </div>
+              </div>
+              <div class="message user">
+                <div class="message-copy">A concise summary would be great.</div>
+                <span class="user-avatar"><svg aria-hidden="true"><use href="#i-user" /></svg></span>
+              </div>
+              <div class="message">
+                <span class="bot-avatar"><svg aria-hidden="true"><use href="#i-sparkles" /></svg></span>
+                <div class="message-copy">Here’s the short version, grounded in your brief…</div>
+              </div>
+            </div>
+            <div class="chat-compose">
+              <span>Ask a follow-up or attach a file…</span>
+              <div class="compose-tools">
+                <svg aria-hidden="true"><use href="#i-upload" /></svg>
+                <span class="send-button"><svg aria-hidden="true"><use href="#i-send" /></svg></span>
+              </div>
+            </div>
+          </div>
+          <div class="float-card">
+            <span class="float-icon"><svg aria-hidden="true"><use href="#i-file" /></svg></span>
+            <span><strong>Answers with context</strong><small>From your uploaded documents</small></span>
+          </div>
+        </div>
+      </section>
 
-</div>
+      <section class="section" id="features" aria-labelledby="features-title">
+        <div class="wrap">
+          <div class="section-heading">
+            <span class="section-kicker">Built for your workflow</span>
+            <h2 id="features-title">More than a chat box</h2>
+            <p>Useful tools for the way ideas actually take shape—from a first question to a finished thought.</p>
+          </div>
+          <div class="feature-grid">
+            <article class="feature-card">
+              <span class="feature-icon"><svg aria-hidden="true"><use href="#i-message" /></svg></span>
+              <h3>Natural AI conversations</h3>
+              <p>Explore questions, refine ideas, draft content, and work through problems with helpful follow-ups.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon"><svg aria-hidden="true"><use href="#i-file" /></svg></span>
+              <h3>Ask questions about files</h3>
+              <p>Upload supported documents and images, then get answers grounded in relevant passages.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon"><svg aria-hidden="true"><use href="#i-history" /></svg></span>
+              <h3>Conversation history</h3>
+              <p>Return to previous chats, search across messages, and continue where you left off.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon"><svg aria-hidden="true"><use href="#i-lock" /></svg></span>
+              <h3>Sign in your way</h3>
+              <p>Use Google or GitHub to access your own profile, conversations, and saved preferences.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon"><svg aria-hidden="true"><use href="#i-palette" /></svg></span>
+              <h3>A workspace that feels yours</h3>
+              <p>Personalize themes, accents, contrast, text size, message spacing, and chat behavior.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon"><svg aria-hidden="true"><use href="#i-download" /></svg></span>
+              <h3>Your data, ready to take</h3>
+              <p>Export conversations as JSON and download a CSV view of your chat history.</p>
+            </article>
+          </div>
+        </div>
+      </section>
 
+      <section class="section" id="how-it-works" aria-labelledby="workflow-title">
+        <div class="workflow wrap">
+          <div class="workflow-copy">
+            <span class="section-kicker">Simple by design</span>
+            <h2 id="workflow-title">From a question to a clearer next step.</h2>
+            <p>ChatPaat keeps your conversations, useful context, and workspace settings together.</p>
+            <a class="button" href="https://chatpaat.netlify.app/" target="_blank" rel="noopener noreferrer">
+              Try it for yourself <svg aria-hidden="true"><use href="#i-arrow" /></svg>
+            </a>
+          </div>
+          <ol class="workflow-list">
+            <li>
+              <span class="step-number">01</span>
+              <span><strong>Sign in securely</strong><span>Continue with Google or GitHub to open your personal workspace.</span></span>
+            </li>
+            <li>
+              <span class="step-number">02</span>
+              <span><strong>Ask, upload, explore</strong><span>Start a conversation or add a supported file for contextual answers.</span></span>
+            </li>
+            <li>
+              <span class="step-number">03</span>
+              <span><strong>Pick up anytime</strong><span>Your chats and saved settings are available when you return.</span></span>
+            </li>
+          </ol>
+        </div>
+      </section>
 
-</header>
+      <section class="section" aria-labelledby="privacy-title">
+        <div class="trust-section wrap">
+          <div>
+            <span class="section-kicker">Control stays with you</span>
+            <h2 id="privacy-title">A workspace built around your account.</h2>
+            <p>
+              Your conversations and uploaded document indexes are associated with your account.
+              Review your profile, manage your preferences, and delete your account from the app.
+            </p>
+          </div>
+          <div class="trust-grid">
+            <div class="trust-item"><svg aria-hidden="true"><use href="#i-shield" /></svg>Account-scoped conversations</div>
+            <div class="trust-item"><svg aria-hidden="true"><use href="#i-file" /></svg>Private document indexes</div>
+            <div class="trust-item"><svg aria-hidden="true"><use href="#i-settings" /></svg>Saved personal settings</div>
+            <div class="trust-item"><svg aria-hidden="true"><use href="#i-user" /></svg>Profile and account controls</div>
+          </div>
+        </div>
+      </section>
 
-<main>
+      <section class="section stack-section" id="technology" aria-labelledby="technology-title">
+        <div class="wrap">
+          <div class="section-heading">
+            <span class="section-kicker">Under the hood</span>
+            <h2 id="technology-title">Modern tools, thoughtfully connected</h2>
+            <p>A responsive web client, an API backend, persistent storage, and AI services work together.</p>
+          </div>
+          <div class="stack-panel" aria-label="Technology stack">
+            <span class="stack-tag"><i></i>React</span>
+            <span class="stack-tag"><i></i>TypeScript</span>
+            <span class="stack-tag"><i></i>Vite</span>
+            <span class="stack-tag"><i></i>FastAPI</span>
+            <span class="stack-tag"><i></i>Python</span>
+            <span class="stack-tag"><i></i>SQLAlchemy</span>
+            <span class="stack-tag"><i></i>PostgreSQL</span>
+            <span class="stack-tag"><i></i>Groq</span>
+            <span class="stack-tag"><i></i>Retrieval-augmented generation</span>
+            <span class="stack-tag"><i></i>JWT</span>
+            <span class="stack-tag"><i></i>Google &amp; GitHub OAuth</span>
+          </div>
+        </div>
+      </section>
 
-<section>
-    <h2>📖 <span>About ChatPaat</span></h2>
-    <p>
-        ChatPaat is a full-stack AI chatbot designed to provide
-        fast, intelligent conversations through a clean and
-        responsive interface. It combines a modern React frontend
-        with a FastAPI backend and Groq-powered AI.
-    </p>
-</section>
+      <section class="wrap" aria-labelledby="cta-title">
+        <div class="cta">
+          <span class="section-kicker">Your next thought starts here</span>
+          <h2 id="cta-title">Ready when you are.</h2>
+          <p>Bring a question, an idea, or a document. We’ll take it from there.</p>
+          <a class="button" href="https://chatpaat.netlify.app/" target="_blank" rel="noopener noreferrer">
+            Open ChatPaat <svg aria-hidden="true"><use href="#i-arrow" /></svg>
+          </a>
+        </div>
+      </section>
+    </main>
 
-<section>
-    <h2>✨ <span>Key Features</span></h2>
-
-
-<div class="grid">
-
-    <div class="card">
-        <h3>🤖 AI Conversations</h3>
-        <p>Intelligent responses powered by Groq's OpenAI GPT-OSS 20B model.</p>
-    </div>
-
-    <div class="card">
-        <h3>🔐 Secure Authentication</h3>
-        <p>JWT authentication, secure password hashing and Google OAuth 2.0.</p>
-    </div>
-
-    <div class="card">
-        <h3>💬 Chat History</h3>
-        <p>Conversations and messages are stored and available for later access.</p>
-    </div>
-
-    <div class="card">
-        <h3>👤 User Profiles</h3>
-        <p>Profile management, password changes and profile image support.</p>
-    </div>
-
-    <div class="card">
-        <h3>📱 Responsive UI</h3>
-        <p>Modern interface optimized for desktop, tablet and mobile devices.</p>
-    </div>
-
-    <div class="card">
-        <h3>🎨 Modern UX</h3>
-        <p>Smooth animations, clean design and dark/light theme support.</p>
-    </div>
-
-</div>
-
-
-</section>
-
-<section>
-    <h2>🛠️ <span>Technology Stack</span></h2>
-
-
-<div class="stack">
-    <span class="tag">Python</span>
-    <span class="tag">FastAPI</span>
-    <span class="tag">SQLAlchemy</span>
-    <span class="tag">PostgreSQL</span>
-    <span class="tag">React</span>
-    <span class="tag">TypeScript</span>
-    <span class="tag">Vite</span>
-    <span class="tag">Tailwind CSS</span>
-    <span class="tag">Groq AI</span>
-    <span class="tag">JWT</span>
-    <span class="tag">Google OAuth</span>
-    <span class="tag">Alembic</span>
-</div>
-
-
-</section>
-
-<section>
-    <h2>🏗️ <span>Architecture</span></h2>
-
-
-<div class="grid">
-
-    <div class="card">
-        <h3>Frontend</h3>
-        <p>React + TypeScript + Vite with responsive components and client-side state management.</p>
-    </div>
-
-    <div class="card">
-        <h3>Backend</h3>
-        <p>FastAPI REST APIs handling authentication, chat operations, profiles and AI requests.</p>
-    </div>
-
-    <div class="card">
-        <h3>Database</h3>
-        <p>PostgreSQL with SQLAlchemy for users, conversations, messages and application data.</p>
-    </div>
-
-    <div class="card">
-        <h3>AI Layer</h3>
-        <p>Groq API provides fast AI inference using OpenAI GPT-OSS 20B.</p>
-    </div>
-
-</div>
-
-
-</section>
-
-<section class="demo">
-    <h2>🌐 <span>Live Application</span></h2>
-
-
-<p>Try ChatPaat directly in your browser.</p>
-
-<a href="https://chatpaat.netlify.app/"
-   target="_blank">
-    https://chatpaat.netlify.app/ →
-</a>
-
-
-</section>
-
-<section>
-    <h2>🚀 <span>Project Highlights</span></h2>
-
-
-<ul>
-    <li>Full-stack AI chatbot application</li>
-    <li>Secure authentication and user management</li>
-    <li>Persistent conversations and chat history</li>
-    <li>Modern responsive frontend</li>
-    <li>RESTful FastAPI backend</li>
-    <li>AI integration through Groq</li>
-    <li>Production-oriented project architecture</li>
-</ul>
-
-
-</section>
-
-</main>
-
-<footer>
-
-
-<strong>ChatPaat</strong>
-<p>AI-Powered Chat Assistant</p>
-<p>Built with FastAPI, React & Groq AI</p>
-
-<!-- DEVELOPER LINKS -->
-<div class="developer">
-
-    <a href="https://skm10-portfolio.netlify.app/"
-       target="_blank"
-       rel="noopener noreferrer"
-       title="Portfolio">
-        <svg viewBox="0 0 24 24" aria-hidden="true"> 
-            <path d="M9 3h6a2 2 0 0 1 2 2v2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3V5a2 2 0 0 1 2-2zm0 4h6V5H9v2zm11 4h-6v1h-4v-1H4v7h16v-7zm-6 0h-4v1h4v-1z"/> 
-        </svg>
-    </a>
-
-    <a href="https://www.linkedin.com/in/sujay-kumar-mondal-a125481b7/"
-       target="_blank"
-       rel="noopener noreferrer"
-       title="LinkedIn">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M20.45 20.45h-3.56v-5.58c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.68H9.34V8.99h3.42v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.61 0 4.28 2.38 4.28 5.48v6.27zM5.32 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.1 20.45H3.55V8.99H7.1v11.46zM22.22 0H1.78C.8 0 0 .78 0 1.74v20.52C0 23.22.8 24 1.78 24h20.44c.98 0 1.78-.78 1.78-1.74V1.74C24 .78 23.2 0 22.22 0z"/> 
-        </svg>
-    </a>
-
-    <a href="https://github.com/SujayKumarMondal"
-       target="_blank"
-       rel="noopener noreferrer"
-       title="GitHub">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2.15c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.15 1.18A10.9 10.9 0 0 1 12 6.93c.97 0 1.94.13 2.85.37 2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.77.11 3.06.73.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.25 5.69.41.36.78 1.08.78 2.18v1.61c0 .3.21.65.79.54C20.21 21.38 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/>
-        </svg>
-    </a>
-
-</div>
-
-
-</footer>
-
-</body>
+    <footer>
+      <div class="footer-inner wrap">
+        <div class="footer-copy">
+          <strong>ChatPaat</strong>
+          <span>Thoughtful AI conversations, in one workspace.</span>
+        </div>
+        <nav class="footer-links" aria-label="Developer links">
+          <a href="https://skm10-portfolio.netlify.app/" target="_blank" rel="noopener noreferrer" aria-label="Developer portfolio">
+            <svg aria-hidden="true"><use href="#i-briefcase" /></svg>
+          </a>
+          <a href="https://www.linkedin.com/in/sujay-kumar-mondal-a125481b7/" target="_blank" rel="noopener noreferrer" aria-label="Developer on LinkedIn">
+            <svg aria-hidden="true"><use href="#i-linkedin" /></svg>
+          </a>
+          <a href="https://github.com/SujayKumarMondal" target="_blank" rel="noopener noreferrer" aria-label="Developer on GitHub">
+            <svg aria-hidden="true"><use href="#i-github" /></svg>
+          </a>
+        </nav>
+      </div>
+    </footer>
+  </body>
 </html>
