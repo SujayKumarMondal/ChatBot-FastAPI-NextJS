@@ -29,13 +29,13 @@ const Card = ({ children, className = "" }: { children: React.ReactNode; classNa
 );
 
 const CardHeader = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex flex-col space-y-1.5 p-6">
+  <div className="flex flex-col space-y-1 p-4">
     {children}
   </div>
 );
 
 const CardTitle = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="text-2xl font-semibold leading-none tracking-tight">
+  <h2 className="text-lg font-semibold leading-none tracking-tight">
     {children}
   </h2>
 );
@@ -47,7 +47,7 @@ const CardDescription = ({ children }: { children: React.ReactNode }) => (
 );
 
 const CardContent = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div className={`p-6 pt-0 ${className}`}>
+  <div className={`px-4 pb-4 ${className}`}>
     {children}
   </div>
 );
@@ -230,9 +230,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 p-4 md:p-8">
+    <div className="profile-page min-h-screen bg-background p-3 sm:p-5">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4">
         <Button
           variant="ghost"
           size="sm"
@@ -244,18 +244,18 @@ export default function ProfilePage() {
         </Button>
       </div>
 
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-xl mx-auto">
         {/* Title */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Profile Settings</h1>
-          <p className="text-muted-foreground">Manage your account and preferences</p>
+        <div className="mb-5">
+          <h1 className="text-2xl font-semibold tracking-tight mb-1">Profile Settings</h1>
+          <p className="text-sm text-muted-foreground">Manage your account and preferences</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-border">
+        <div className="flex gap-1 mb-4 border-b border-border">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`pb-3 px-4 font-medium transition-colors border-b-2 -mb-1 ${
+            className={`pb-2.5 px-3 text-sm font-medium transition-colors border-b-2 -mb-1 ${
               activeTab === "profile"
                 ? "text-primary border-primary"
                 : "text-muted-foreground border-transparent hover:text-foreground"
@@ -266,7 +266,7 @@ export default function ProfilePage() {
           </button>
           <button
             onClick={() => setActiveTab("delete")}
-            className={`pb-3 px-4 font-medium transition-colors border-b-2 -mb-1 ${
+            className={`pb-2.5 px-3 text-sm font-medium transition-colors border-b-2 -mb-1 ${
               activeTab === "delete"
                 ? "text-destructive border-destructive"
                 : "text-muted-foreground border-transparent hover:text-foreground"
@@ -286,20 +286,20 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               {/* Profile Picture Upload Section */}
-              <div className="mb-6 pb-6 border-b border-border">
-                <label className="block text-sm font-medium mb-4">Profile Picture</label>
-                <div className="flex items-center gap-6">
+              <div className="mb-4 pb-4 border-b border-border">
+                <label className="block text-sm font-medium mb-3">Profile Picture</label>
+                <div className="flex items-center gap-4">
                   {/* Profile Image Preview */}
                   <div className="flex-shrink-0">
                     {previewImage ? (
                       <img 
                         src={previewImage} 
                         alt="Profile" 
-                        className="h-24 w-24 rounded-full object-cover border-2 border-primary"
+                        className="h-16 w-16 rounded-full object-cover border border-border"
                       />
                     ) : (
-                      <div className="h-24 w-24 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/30">
-                        <User className="h-12 w-12 text-primary/50" />
+                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center border border-border">
+                        <User className="h-8 w-8 text-muted-foreground" />
                       </div>
                     )}
                   </div>
@@ -334,10 +334,10 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <form onSubmit={handleUpdateProfile} className="space-y-3">
                 {/* Username (Read-only) */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Username</label>
+                  <label className="block text-sm font-medium mb-1">Username</label>
                   <Input
                     type="text"
                     value={user?.username || ""}
@@ -351,7 +351,7 @@ export default function ProfilePage() {
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Email</label>
+                  <label className="block text-sm font-medium mb-1">Email</label>
                   <Input
                     type="email"
                     value={email}
@@ -372,7 +372,7 @@ export default function ProfilePage() {
 
                 {/* First Name */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">First Name</label>
+                  <label className="block text-sm font-medium mb-1">First Name</label>
                   <Input
                     type="text"
                     value={firstName}
@@ -383,7 +383,7 @@ export default function ProfilePage() {
 
                 {/* Last Name */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Last Name</label>
+                  <label className="block text-sm font-medium mb-1">Last Name</label>
                   <Input
                     type="text"
                     value={lastName}
@@ -393,7 +393,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Buttons */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-2 pt-2">
                   <Button
                     type="submit"
                     disabled={isLoading}
@@ -419,7 +419,7 @@ export default function ProfilePage() {
         {activeTab === "delete" && (
           <Card className="border-destructive/30">
             <CardHeader>
-              <h2 className="text-2xl font-semibold leading-none tracking-tight text-destructive">
+              <h2 className="text-lg font-semibold leading-none tracking-tight text-destructive">
                 Delete Account
               </h2>
               <CardDescription>

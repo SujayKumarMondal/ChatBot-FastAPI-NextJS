@@ -18,7 +18,7 @@ export const AboutPage = () => {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="about-page p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <motion.div
         className="flex items-center gap-4 justify-between"

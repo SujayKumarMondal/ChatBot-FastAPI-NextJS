@@ -100,20 +100,35 @@ class UserPreferences(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("chatpaat_app_customuser.id"), unique=True, nullable=False, index=True)
-    theme = Column(String(20), default="light")  # light, dark, auto
-    language = Column(String(10), default="en")  # en, es, fr, de, ja, etc.
-    notifications_enabled = Column(Boolean, default=True)
-    email_on_new_features = Column(Boolean, default=True)
-    two_factor_enabled = Column(Boolean, default=False)
-    timezone = Column(String(50), default="UTC")
-    created_at = Column(DateTime, default=utc_now)
-    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+    theme = Column(String(40), nullable=False, default="light")
+    language = Column(String(10), nullable=False, default="en")
+    notifications_enabled = Column(Boolean, nullable=False, default=True)
+    email_on_new_features = Column(Boolean, nullable=False, default=True)
+    two_factor_enabled = Column(Boolean, nullable=False, default=False)
+    timezone = Column(String(50), nullable=False, default="UTC")
+    accent_color = Column(String(7), nullable=False, default="#168FA7")
+    high_contrast = Column(Boolean, nullable=False, default=False)
+    warm_palette = Column(Boolean, nullable=False, default=False)
+    font_size = Column(String(10), nullable=False, default="base")
+    message_density = Column(String(15), nullable=False, default="comfortable")
+    auto_scroll = Column(Boolean, nullable=False, default=True)
+    sound_enabled = Column(Boolean, nullable=False, default=True)
+    compact_sidebar = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, nullable=False, default=utc_now)
+    updated_at = Column(DateTime, nullable=False, default=utc_now, onupdate=utc_now)
     
     # Relationship
     user = relationship("CustomUser", back_populates="preferences")
     
     def __str__(self):
         return f"UserPreferences(user_id={self.user_id}, theme={self.theme})"
+
+
+class RevokedToken(Base):
+    __tablename__ = "chatpaat_app_revokedtoken"
+
+    jti = Column(String(36), primary_key=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
 
 
 # ✅ ADDED: Audit Log Model for compliance and debugging
@@ -137,3 +152,24 @@ class AuditLog(Base):
     
     def __str__(self):
         return f"AuditLog(user_id={self.user_id}, action={self.action}, resource={self.resource})"
+
+
+class RagDocument(Base):
+    __tablename__ = "rag_documents"
+
+    id = Column(String(36), primary_key=True)
+    user_id = Column(Integer, ForeignKey("chatpaat_app_customuser.id", ondelete="CASCADE"), nullable=False, index=True)
+    filename = Column(String(255), nullable=False)
+    media_type = Column(String(255), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=utc_now)
+
+
+class RagChunk(Base):
+    __tablename__ = "rag_chunks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    document_id = Column(String(36), ForeignKey("rag_documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("chatpaat_app_customuser.id", ondelete="CASCADE"), nullable=False, index=True)
+    chunk_index = Column(Integer, nullable=False)
+    content = Column(Text, nullable=False)
+    embedding = Column(Text, nullable=False)

@@ -174,22 +174,22 @@ export default function HistoryPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col"
+      className="history-page min-h-screen bg-background flex flex-col"
     >
       {/* Header */}
-      <div className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur-md shadow-lg">
-        <div className="px-4 md:px-6 py-4 flex items-center justify-between mb-4">
+      <div className="history-header sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+        <div className="px-4 md:px-6 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate(-1)}
-              className="hover:bg-primary/10 rounded-full"
+              className="hover:bg-muted rounded-xl"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+              <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
                 Chat History
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -206,10 +206,10 @@ export default function HistoryPage() {
               <Button
                 onClick={handleRefresh}
                 disabled={isLoading || isRefreshing || isRefreshed}
-                className={`font-semibold gap-2 rounded-full text-white transition-all hover:shadow-lg ${
+                className={`font-medium gap-2 rounded-lg text-white transition-all ${
                   isRefreshed
-                    ? "bg-gradient-to-r from-green-500 to-green-600 hover:shadow-green-500/50"
-                    : "bg-gradient-to-r from-secondary to-secondary/80 hover:shadow-secondary/50"
+                    ? "bg-green-700 hover:bg-green-600"
+                    : "bg-secondary hover:bg-secondary/90"
                 }`}
                 title={
                   isRefreshing
@@ -234,7 +234,7 @@ export default function HistoryPage() {
             <Button
               onClick={handleDownloadCSV}
               disabled={sortedRows.length === 0}
-              className="bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/50 transition-all rounded-full text-white font-semibold gap-2"
+              className="bg-primary hover:brightness-110 transition-all rounded-lg text-primary-foreground font-medium gap-2"
             >
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Export CSV</span>
@@ -243,19 +243,19 @@ export default function HistoryPage() {
         </div>
 
         {/* Search */}
-        <div className="px-4 md:px-6 pb-4">
+        <div className="px-4 md:px-6 pb-3">
           <input
             type="text"
             placeholder="Search in history..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border border-border/40 bg-background/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+            className="w-full px-3.5 py-2 rounded-lg border border-border bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
           />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto px-4 md:px-6 py-6">
+      <div className="history-results flex-1 overflow-auto px-4 md:px-6 py-5">
         {isLoading ? (
           <div className="flex items-center justify-center h-96">
             <div className="text-center space-y-3">
@@ -285,10 +285,10 @@ export default function HistoryPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="overflow-x-auto rounded-lg border border-border/40 bg-card/50 backdrop-blur-sm shadow-lg"
+            className="overflow-x-auto rounded-xl border border-border bg-card"
           >
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 border-b border-border/40">
+              <thead className="sticky top-0 bg-muted/70 border-b border-border">
                 <tr>
                   <th
                     className="px-4 py-3 text-left font-semibold text-foreground/80 cursor-pointer hover:text-primary transition-colors"
@@ -352,7 +352,7 @@ export default function HistoryPage() {
                     key={row.messageId}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: idx * 0.01 }}
+                    transition={{ delay: Math.min(idx * 0.008, 0.2), duration: 0.2 }}
                     className="hover:bg-primary/5 transition-colors group"
                   >
                     <td className="px-4 py-3">

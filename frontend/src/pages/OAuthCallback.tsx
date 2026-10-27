@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getApiBaseUrl } from '../lib/config';
+import { consumeOAuthProviderState } from '../lib/googleOAuth';
 
 const OAuthCallback = () => {
   const navigate = useNavigate();
@@ -15,19 +16,30 @@ const OAuthCallback = () => {
     exchangeAttemptedRef.current = true;
 
     const code = searchParams.get('code');
-    const provider = 'google';
+    const provider = consumeOAuthProviderState(searchParams.get('state'));
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
 
+    if (!provider) {
+      navigate('/', { replace: true, state: { error: 'Sign-In could not be verified. Please try again.' } });
+      return;
+    }
+
     if (error) {
       console.error('OAuth error:', error, errorDescription);
-      navigate('/', { replace: true, state: { error: errorDescription || error } });
+      navigate('/', {
+        replace: true,
+        state: { error: errorDescription || `${provider === 'github' ? 'GitHub' : 'Google'} sign-in was cancelled.` },
+      });
       return;
     }
 
     if (!code) {
       console.error('No authorization code received');
-      navigate('/', { replace: true, state: { error: 'No authorization code received' } });
+      navigate('/', {
+        replace: true,
+        state: { error: `No authorization code received from ${provider === 'github' ? 'GitHub' : 'Google'}.` },
+      });
       return;
     }
 
@@ -71,18 +83,14 @@ const OAuthCallback = () => {
           image: data.user?.image || "",
         };
 
-        sessionStorage.setItem("access_token", data.access);
-        sessionStorage.setItem("refresh_token", data.refresh);
-        sessionStorage.setItem("user", JSON.stringify(userWithProvider));
-
         signInWithTokens(data.access, data.refresh, userWithProvider);
-
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 50);
-      } catch (err: any) {
+        navigate('/', { replace: true });
+      } catch (err) {
         console.error('Token exchange failed:', err);
-        navigate('/', { replace: true, state: { error: err.message } });
+        navigate('/', {
+          replace: true,
+          state: { error: err instanceof Error ? err.message : 'Token exchange failed.' },
+        });
       }
     };
 
@@ -90,9 +98,9 @@ const OAuthCallback = () => {
   }, []); // Empty dependency array - run only once on mount
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="auth-screen auth-progress flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <div className="auth-progress-indicator animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
         <p className="mt-2 text-sm text-gray-500">Please wait...</p>
       </div>
     </div>

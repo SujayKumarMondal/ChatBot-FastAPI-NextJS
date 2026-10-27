@@ -3,6 +3,7 @@ import {
   Star,
   Trash2,
   AlertTriangle,
+  Plus,
 } from "lucide-react";
 
 import {
@@ -37,7 +38,7 @@ interface IChat {
 
 export function AppSidebar() {
   const [allChats, setAllChats] = useState<IChat[]>([]);
-  const { user, isLoading, refreshTrigger } = useAuth();
+  const { user, token, isLoading, refreshTrigger } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const isMountedRef = useRef(true);
@@ -59,7 +60,7 @@ export function AppSidebar() {
     }
 
     // Check if we have a user with an ID
-    if (!user || !user.id) {
+    if (!user || !user.id || !token) {
       console.log("❌ No user available, clearing chats", { user, userId: user?.id });
       setAllChats([]);
       return;
@@ -67,7 +68,7 @@ export function AppSidebar() {
     
     try {
       console.log("🔄 Fetching chats for user:", user.id);
-      const chatsData = await getChatsByUserId(user.id);
+      const chatsData = await getChatsByUserId(user.id, token);
       console.log("📥 Received chats data from API:", chatsData, "Type:", typeof chatsData, "Is Array:", Array.isArray(chatsData), "Length:", chatsData?.length);
       
       // Sort chats by created_at in descending order (latest first)
@@ -82,7 +83,7 @@ export function AppSidebar() {
       console.error("❌ Error fetching chats:", error);
       setAllChats([]);
     }
-  }, [user, isLoading]);
+  }, [user, token, isLoading]);
 
   // Fetch chats when user changes or when refreshTrigger changes
   useEffect(() => {
@@ -151,15 +152,15 @@ export function AppSidebar() {
 
   const renderChatItem = (chat: IChat) => (
     <SidebarMenuItem key={chat.id}>
-      <div className="flex items-center gap-2 group w-full min-h-[2.75rem]">
+      <div className="group flex min-h-9 w-full items-center gap-1.5">
         <NavLink to={`chats/${chat.id}`} className="flex-1 min-w-0">
           {({ isActive }) => (
             <SidebarMenuButton
               className={cn(
-                "flex items-center gap-2 px-2.5 py-2 rounded-lg transition cursor-pointer text-[13px] sm:text-sm font-medium h-10 w-full",
-                isActive 
-                  ? "bg-gradient-to-r from-primary/40 to-accent/40 text-primary border border-primary/40 shadow-md shadow-primary/20" 
-                  : "hover:bg-primary/20 hover:border-primary/30 border border-transparent"
+                "flex h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1 transition cursor-pointer text-xs sm:text-[13px] font-medium",
+                isActive
+                  ? "border border-primary/20 bg-primary/10 text-primary"
+                  : "border border-transparent text-muted-foreground hover:border-border/80 hover:bg-card/70 hover:text-foreground"
               )}
             >
               <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-primary/70" />
@@ -215,18 +216,31 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className="bg-gradient-to-b from-background to-secondary/5 text-foreground border-r border-primary/20">
+    <Sidebar className="app-sidebar border-r border-border/70 bg-sidebar text-sidebar-foreground">
       <SidebarContent className="flex flex-col h-full p-0">
-        <div className="space-y-4 overflow-y-auto flex-1 px-0">
+        <div className="flex-1 space-y-2 overflow-y-auto px-0">
           <div className="px-4 pt-4">
             <button
               type="button"
               onClick={handleNewChat}
-              className="w-full rounded-xl bg-gradient-to-r from-primary to-accent px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition hover:opacity-95"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/45 hover:bg-primary/15"
             >
-              New Chat
+              <Plus className="h-4 w-4 text-primary" />
+              New conversation
             </button>
           </div>
+
+          {filteredChats.length === 0 && favorites.length === 0 && (
+            <div className="mx-4 mt-5 rounded-2xl border border-dashed border-border/80 bg-background/30 px-4 py-5 text-center">
+              <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground">
+                <MessageSquare className="h-4 w-4" />
+              </div>
+              <p className="text-xs font-medium text-foreground">A fresh start</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Your conversations will appear here.
+              </p>
+            </div>
+          )}
 
           {/* Favorites Section */}
           {favorites.length > 0 && (
@@ -236,7 +250,7 @@ export function AppSidebar() {
                 Favorites
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu className="space-y-1">
+                <SidebarMenu className="gap-0">
                   {favorites.map(renderChatItem)}
                 </SidebarMenu>
               </SidebarGroupContent>
@@ -250,7 +264,7 @@ export function AppSidebar() {
                 💬 All Chats
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu className="space-y-1">
+                <SidebarMenu className="gap-0">
                   {filteredChats.map(renderChatItem)}
                 </SidebarMenu>
               </SidebarGroupContent>
