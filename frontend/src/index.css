@@ -1119,12 +1119,152 @@ select {
     box-shadow: 0 12px 32px color-mix(in srgb, var(--primary) 28%, transparent);
 }
 
-.auth-progress-indicator {
-    width: 3rem;
-    height: 3rem;
-    border-width: 2px;
-    border-color: color-mix(in srgb, var(--primary) 20%, transparent);
-    border-bottom-color: var(--primary);
+.auth-progress-card {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 26rem);
+    border: 1px solid color-mix(in srgb, var(--border) 80%, var(--primary));
+    border-radius: 1.5rem;
+    background: color-mix(in srgb, var(--card) 86%, transparent);
+    padding: 2.5rem 2rem;
+    box-shadow: 0 24px 80px rgb(0 0 0 / 12%);
+    backdrop-filter: blur(24px);
+}
+
+.auth-progress-visual {
+    position: relative;
+    display: grid;
+    width: 7rem;
+    aspect-ratio: 1;
+    margin: 0 auto 1.75rem;
+    place-items: center;
+}
+
+.auth-progress-orbit {
+    position: absolute;
+    border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+    border-radius: 50%;
+    animation: auth-orbit 4s linear infinite;
+}
+
+.auth-progress-orbit::after {
+    position: absolute;
+    top: 50%;
+    left: -0.25rem;
+    width: 0.5rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 1rem color-mix(in srgb, var(--primary) 55%, transparent);
+    content: "";
+}
+
+.auth-progress-orbit-outer {
+    inset: 0;
+}
+
+.auth-progress-orbit-inner {
+    inset: 0.9rem;
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    animation-duration: 3s;
+    animation-direction: reverse;
+}
+
+.auth-progress-orbit-inner::after {
+    background: var(--accent);
+}
+
+.auth-progress-core {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--border));
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--primary) 9%, var(--card));
+    padding: 0.9rem;
+    box-shadow: 0 0 2rem color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.auth-progress-core span {
+    width: 0.38rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--primary);
+    animation: auth-dot 1.1s ease-in-out infinite;
+}
+
+.auth-progress-core span:nth-child(2) {
+    animation-delay: 150ms;
+}
+
+.auth-progress-core span:nth-child(3) {
+    animation-delay: 300ms;
+}
+
+.auth-progress-title {
+    color: var(--foreground);
+    font-size: 1.35rem;
+    font-weight: 650;
+    letter-spacing: -0.035em;
+}
+
+.auth-progress-provider {
+    margin-top: 0.45rem;
+    color: var(--primary);
+    font-size: 0.95rem;
+    font-weight: 550;
+}
+
+.auth-progress-track {
+    position: relative;
+    height: 0.25rem;
+    margin: 1.5rem 0 1rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 12%, var(--muted));
+}
+
+.auth-progress-track span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 36%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    animation: auth-progress-sweep 1.8s ease-in-out infinite;
+}
+
+.auth-progress-hint {
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+@keyframes auth-orbit {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes auth-dot {
+    0%,
+    60%,
+    100% {
+        opacity: 0.35;
+        transform: translateY(0);
+    }
+    30% {
+        opacity: 1;
+        transform: translateY(-0.2rem);
+    }
+}
+
+@keyframes auth-progress-sweep {
+    0% {
+        transform: translateX(-110%);
+    }
+    100% {
+        transform: translateX(300%);
+    }
 }
 
 .history-page {

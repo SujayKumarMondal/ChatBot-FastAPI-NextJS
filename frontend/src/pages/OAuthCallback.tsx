@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getApiBaseUrl } from '../lib/config';
@@ -9,6 +9,8 @@ const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const { signInWithTokens } = useAuth();
   const exchangeAttemptedRef = useRef(false);
+  const [oauthProvider, setOauthProvider] = useState<"google" | "github" | null>(null);
+  const [isTakingLonger, setIsTakingLonger] = useState(false);
 
   useEffect(() => {
     // Prevent duplicate API calls
@@ -43,11 +45,18 @@ const OAuthCallback = () => {
       return;
     }
 
+    setOauthProvider(provider);
+    const slowSignInTimeout = window.setTimeout(() => setIsTakingLonger(true), 5000);
+
     // Exchange the authorization code for tokens
     const exchangeTokens = async () => {
       try {
         const redirectUri = `${window.location.origin}/oauth-callback`;
         const apiBaseUrl = getApiBaseUrl();
+        const exchangePayload: { code: string; redirect_uri?: string } = { code };
+        if (provider === "google") {
+          exchangePayload.redirect_uri = redirectUri;
+        }
 
         if (!apiBaseUrl || apiBaseUrl === "http://127.0.0.1:7004") {
           console.error(
@@ -60,10 +69,7 @@ const OAuthCallback = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            code: code,
-            redirect_uri: redirectUri,
-          }),
+          body: JSON.stringify(exchangePayload),
         });
 
         if (!response.ok) {
@@ -91,18 +97,39 @@ const OAuthCallback = () => {
           replace: true,
           state: { error: err instanceof Error ? err.message : 'Token exchange failed.' },
         });
+      } finally {
+        window.clearTimeout(slowSignInTimeout);
       }
     };
 
     exchangeTokens();
-  }, []); // Empty dependency array - run only once on mount
+  }, [navigate, searchParams, signInWithTokens]);
+
+  const providerName = oauthProvider === "github" ? "GitHub" : oauthProvider === "google" ? "Google" : "your account";
 
   return (
-    <div className="auth-screen auth-progress flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="auth-progress-indicator animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        <p className="mt-2 text-sm text-gray-500">Please wait...</p>
-      </div>
+    <div className="auth-screen auth-progress flex min-h-screen items-center justify-center px-4 py-8">
+      <section className="auth-progress-card text-center" role="status" aria-live="polite">
+        <div className="auth-progress-visual" aria-hidden="true">
+          <div className="auth-progress-orbit auth-progress-orbit-outer" />
+          <div className="auth-progress-orbit auth-progress-orbit-inner" />
+          <div className="auth-progress-core">
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+        <h1 className="auth-progress-title">Securing your sign-in</h1>
+        <p className="auth-progress-provider">Connecting to {providerName}</p>
+        <div className="auth-progress-track" aria-hidden="true">
+          <span />
+        </div>
+        <p className="auth-progress-hint">
+          {isTakingLonger
+            ? "Your sign-in is still in progress. First-time account setup can take a little longer."
+            : "Your account is being prepared. This usually takes just a moment."}
+        </p>
+      </section>
     </div>
   );
 };

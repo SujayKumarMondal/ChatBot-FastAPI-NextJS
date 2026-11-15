@@ -47,7 +47,6 @@ export async function startGithubOAuthRedirect(): Promise<void> {
   sessionStorage.setItem(GITHUB_STATE_KEY, state);
   const params = new URLSearchParams({
     client_id: config.client_id,
-    redirect_uri: `${window.location.origin}/oauth-callback`,
     scope: "read:user user:email",
     state,
   });
