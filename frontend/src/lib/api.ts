@@ -14,11 +14,12 @@ const api = axios.create({
 function handleError(err: unknown): never {
   if (axios.isAxiosError(err)) {
     const axiosError = err as AxiosError;
-    throw new Error(
-      axiosError.response?.data
-        ? JSON.stringify(axiosError.response.data)
-        : axiosError.message
-    );
+    const responseData = axiosError.response?.data;
+    if (responseData && typeof responseData === "object" && "detail" in responseData) {
+      const detail = (responseData as { detail?: unknown }).detail;
+      if (typeof detail === "string") throw new Error(detail);
+    }
+    throw new Error(responseData ? JSON.stringify(responseData) : axiosError.message);
   } else if (err instanceof Error) {
     throw new Error(err.message);
   }
@@ -26,9 +27,38 @@ function handleError(err: unknown): never {
 }
 
 // 🔹 Prompt GPT
-export async function promptGPT(data: { chat_id: string; content: string }, token: string) {
+export async function promptGPT(
+  data: {
+    chat_id: string;
+    content: string;
+    document_ids?: string[];
+    edit_message_id?: number;
+  },
+  token: string
+) {
   try {
     const response = await api.post("/prompt_gpt/", data, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+export interface RagDocument {
+  id: string;
+  filename: string;
+  media_type: string;
+  chunk_count: number;
+  created_at: string;
+}
+
+export async function uploadRagDocument(file: File, token: string): Promise<RagDocument> {
+  const formData = new FormData();
+  formData.append("file", file);
+  try {
+    const response = await axios.post(`${BASE_URL}/api/rag/documents/`, formData, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -51,13 +81,14 @@ export async function getChatMessages(chatId: string, token: string) {
 }
 
 // 🔹 Get all chats for a user
-export async function getChatsByUserId(userId: number) {
+export async function getChatsByUserId(userId: number, token: string) {
   try {
-    const response = await api.get(`/api/data/chat/by-user-id/${userId}`);
+    const response = await api.get(`/api/data/chat/by-user-id/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     return response.data.data || [];
   } catch (err: unknown) {
-    console.error("Error fetching chats:", err);
-    return [];
+    handleError(err);
   }
 }
 
@@ -291,6 +322,48 @@ export async function deleteAccount(token: string) {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+export interface UserPreferences {
+  theme: string;
+  language: string;
+  notifications_enabled: boolean;
+  email_on_new_features: boolean;
+  two_factor_enabled: boolean;
+  timezone: string;
+  accent_color: string;
+  high_contrast: boolean;
+  warm_palette: boolean;
+  font_size: "small" | "base" | "large" | "xl";
+  message_density: "compact" | "comfortable" | "spacious";
+  auto_scroll: boolean;
+  sound_enabled: boolean;
+  compact_sidebar: boolean;
+}
+
+export async function getUserPreferences(token: string) {
+  try {
+    const response = await api.get("/api/preferences/", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data as { initialized: boolean; preferences: UserPreferences };
+  } catch (err: unknown) {
+    handleError(err);
+  }
+}
+
+export async function updateUserPreferences(
+  preferences: Partial<UserPreferences>,
+  token: string
+) {
+  try {
+    const response = await api.put("/api/preferences/", preferences, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data as { initialized: boolean; preferences: UserPreferences };
   } catch (err: unknown) {
     handleError(err);
   }

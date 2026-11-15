@@ -18,16 +18,17 @@ load_dotenv(BACKEND_DIR / ".env")
 
 # Create FastAPI app
 app = FastAPI(title="ChatPaat API", version="1.0.0")
+fastapi_app = app
 
 # Custom OpenAPI schema with Bearer token security
 def custom_openapi():
-    if app.openapi_schema:
-        return app.openapi_schema
+    if fastapi_app.openapi_schema:
+        return fastapi_app.openapi_schema
     openapi_schema = get_openapi(
         title="ChatPaat API",
         version="1.0.0",
         description="ChatPaat API Endpoints",
-        routes=app.routes,
+        routes=fastapi_app.routes,
     )
     openapi_schema["components"]["securitySchemes"] = {
         "Bearer": {
@@ -39,7 +40,12 @@ def custom_openapi():
     }
     
     # Add security requirement to all endpoints except OAuth exchanges and refresh
-    public_endpoints = ["/api/auth/google/exchange/", "/api/refresh-token/"]
+    public_endpoints = [
+        "/api/auth/google/exchange/",
+        "/api/auth/github/config/",
+        "/api/auth/github/exchange/",
+        "/api/refresh-token/",
+    ]
     
     for path, path_item in openapi_schema.get("paths", {}).items():
         for operation in path_item.values():
@@ -48,10 +54,10 @@ def custom_openapi():
                 if not any(path.startswith(pub) for pub in public_endpoints):
                     operation["security"] = [{"Bearer": []}]
     
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
+    fastapi_app.openapi_schema = openapi_schema
+    return fastapi_app.openapi_schema
 
-app.openapi = custom_openapi
+fastapi_app.openapi = custom_openapi
 
 # =========================
 # Environment-based configuration
@@ -110,22 +116,11 @@ if ENVIRONMENT == "production":
 else:
     ALLOWED_ORIGINS = parse_origins(os.getenv("CORS_ORIGINS"), DEFAULT_ORIGINS)
 
-# CORS middleware - secure configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=r"https://[a-zA-Z0-9-]+\.netlify\.app",
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-    max_age=3600,
-)
-
 # Include API routes
-app.include_router(router)
+fastapi_app.include_router(router)
 
 
-@app.on_event("startup")
+@fastapi_app.on_event("startup")
 async def startup_event():
     init_db()
 
@@ -133,7 +128,7 @@ async def startup_event():
 # =========================
 # Health check endpoint
 # =========================
-@app.get("/health")
+@fastapi_app.get("/health")
 async def health_check():
     """Health check endpoint for deployment monitoring."""
     return JSONResponse(
@@ -146,10 +141,21 @@ async def health_check():
     )
 
 
-@app.get("/")
+@fastapi_app.get("/")
 async def root():
     """Root endpoint."""
     return {"message": "ChatPaat API", "version": "1.0.0"}
+
+
+app = CORSMiddleware(
+    app=fastapi_app,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://[a-zA-Z0-9-]+\.netlify\.app",
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    max_age=3600,
+)
 
 
 if __name__ == "__main__":
