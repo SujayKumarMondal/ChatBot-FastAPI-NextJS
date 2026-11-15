@@ -383,16 +383,19 @@ def _get_google_userinfo(access_token: str) -> dict:
     return resp.json()
 
 
-def _exchange_github_code(code: str, redirect_uri: str) -> dict:
+def _exchange_github_code(code: str, redirect_uri: Optional[str] = None) -> dict:
     client_id, client_secret = get_github_oauth_config()
+    data = {
+        "code": code,
+        "client_id": client_id,
+        "client_secret": client_secret,
+    }
+    if redirect_uri:
+        data["redirect_uri"] = redirect_uri
+
     response = requests.post(
         "https://github.com/login/oauth/access_token",
-        data={
-            "code": code,
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "redirect_uri": redirect_uri,
-        },
+        data=data,
         headers={"Accept": "application/json"},
         timeout=10,
         verify=_github_ca_bundle(),
@@ -476,10 +479,9 @@ def github_oauth_config():
 @router.post("/api/auth/github/exchange/", tags=["Authentication"])
 def github_exchange(req: GitHubExchangeRequest, db: Session = Depends(get_db)):
     """Exchange a GitHub authorization code for local JWTs and a ChatPaat user."""
-    redirect_uri = req.redirect_uri or f"{FRONTEND_URL}/oauth-callback"
     provider_stage = "GitHub token exchange"
     try:
-        token_data = _exchange_github_code(req.code, redirect_uri)
+        token_data = _exchange_github_code(req.code, req.redirect_uri)
         provider_stage = "GitHub profile lookup"
         info = _get_github_userinfo(token_data["access_token"])
     except RuntimeError as exc:
